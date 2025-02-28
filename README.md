@@ -2,7 +2,9 @@
 
 **DeepLocalizer**: Find subnetworks in deep neural networks most active during a certain task/concept.
 
-This library extends [The LLM Language Network: A Neuroscientific Approach for Identifying Causally Task-Relevant Units](https://arxiv.org/abs/2411.02280) to other models and data.
+This library is meant to provide easy functions to accomplish :arrow_up: and provide evidence if we've actually found those subnetworks or not. 
+
+Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Causally Task-Relevant Units](https://arxiv.org/abs/2411.02280) to other models and data.
 
 **Roadmap**
 
