@@ -8,7 +8,8 @@ Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Ca
 
 - [x] Replicate some parts of original paper (https://github.com/xnought/paper-implement/tree/main/language_network)
 - [ ] Set up face localizer example w/ goal of applying to a resnet model
-	- [ ] Create example dataset with 8k positive (faces) examples and 8k negative examples (non-faces like objects, scenes, ...)
+	- [ ] 10k positive (faces) from CelebA
+	- [ ] 10k negative (objects) from COCO
 - [ ] Basic API around pandas for data examples, with positive and negative/control examples
 - [ ] Easy way to extract activations from the model
 - [ ] Localization analysis API around activations of the data points given each model
@@ -74,3 +75,14 @@ Have https://docs.astral.sh/uv/ installed.
 uv sync
 uv run example.py
 ```
+
+## References
+
+**papers**
+- https://arxiv.org/abs/2411.02280
+- https://web.mit.edu/bcs/nklab/media/pdfs/Dobs_2022.pdf
+
+**code/datasets**
+- https://huggingface.co/datasets/tpremoli/CelebA-attrs
+- https://huggingface.co/datasets/phiyodr/coco2017
+- https://huggingface.co/microsoft/resnet-50
