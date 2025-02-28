@@ -57,7 +57,7 @@ task = ... # you define this (has 'id' and 'positive' columns)
 task_with_acts = dl.torch_activations(
 	task, 
 	forward=resnet_forward,
-	activations_from=(model.l1, model.l2, model.l3), # get outputs from l1, l2, and l3 as activations
+	activations_from=[model.l1, model.l2, model.l3], # get outputs from l1, l2, and l3 as activations
 	device=DEVICE
 )
 result = dl.localize(task_with_acts)
