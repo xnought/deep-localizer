@@ -46,18 +46,21 @@ You must specifically define which layers we should use the activations for!
 import deeplocalizer as dl
 from transformers import AutoImageProcessor, ResNetForImageClassification
 import torch
+import PIL
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 preprocessor = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
 model = ResNetForImageClassification.from_pretrained("microsoft/resnet-50")
 resnet_forward = lambda image: model(**preprocessor(image))
+fetch_image = lambda image_id: PIL.Image.open(image_id)
 
 task = ... # you define this (has 'id' and 'positive' columns)
 task_with_acts = dl.torch_activations(
 	task, 
-	forward=resnet_forward,
-	activations_from=[model.l1, model.l2, model.l3], # get outputs from l1, l2, and l3 as activations
+	data_loader=fetch_image,
+	model_forward=resnet_forward,
+	extract_activations=[model.l1, model.l2, model.l3], # get outputs from l1, l2, and l3 as activations
 	device=DEVICE
 )
 result = dl.localize(task_with_acts)
