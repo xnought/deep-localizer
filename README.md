@@ -9,9 +9,18 @@ Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Ca
 **Roadmap**
 
 - [x] Replicate some parts of original paper (https://github.com/xnought/paper-implement/tree/main/language_network)
-- [ ] Setup library to be used easily (uv) + connect to examples
+- [x] Setup library to be used easily (uv) + connect to examples
 - [ ] Set up face localizer example w/ goal of applying to a resnet model
 - [ ] Basic API around pandas for data examples, with positive and negative/control examples
 - [ ] Easy way to extract activations from the model
 - [ ] Localization analysis API around activations of the data points given each model
 - [ ] Visualize outputs
+
+## Development
+
+Have https://docs.astral.sh/uv/ installed.
+
+```bash
+uv sync
+uv run example.py
+```
