@@ -69,12 +69,10 @@ result = dl.localize(task_with_acts)
 
 ## Development
 
-Have https://docs.astral.sh/uv/ installed.
+**Face Localization Example**
 
-```bash
-uv sync
-uv run example.py
-```
+1. Make sure you have Python 3.10 or above and first run all cells in the `face_localizer_dataset.ipynb` to download all the necessary data.
+2. TODO
 
 ## References
 
@@ -86,3 +84,4 @@ uv run example.py
 - https://huggingface.co/datasets/tpremoli/CelebA-attrs
 - https://huggingface.co/datasets/phiyodr/coco2017
 - https://huggingface.co/microsoft/resnet-50
+- https://stackoverflow.com/questions/9786102/how-do-i-parallelize-a-simple-python-loop
