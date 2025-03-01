@@ -7,9 +7,9 @@ Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Ca
 **Roadmap**
 
 - [x] Replicate some parts of original paper (https://github.com/xnought/paper-implement/tree/main/language_network)
-- [ ] Set up face localizer example w/ goal of applying to a resnet model
-	- [ ] 10k positive (faces) from CelebA
-	- [ ] 10k negative (objects) from COCO
+- [x] Set up face localizer example w/ goal of applying to a resnet model
+	- [x] 5k positive (faces) from CelebA
+	- [x] 5k negative (objects) from COCO
 - [ ] Basic API around pandas for data examples, with positive and negative/control examples
 - [ ] Easy way to extract activations from the model
 - [ ] Localization analysis API around activations of the data points given each model
