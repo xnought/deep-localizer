@@ -13,6 +13,8 @@ Stretch Goal: turn into a library that works on any model.
 	- [x] 5k positive (faces) from CelebA
 	- [x] 5k negative (objects) from COCO
 - [ ] Extract activations from the resnet model
+	- [x] test track the activations
+	- [ ] store activations on disk
 - [ ] Localization analysis API around activations of the data points given each model
 - [ ] Brief analysis on the image case
 
