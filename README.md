@@ -4,18 +4,17 @@
 
 Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Causally Task-Relevant Units](https://arxiv.org/abs/2411.02280) and [Brain-like functional specialization emerges spontaneously in deep neural networks](https://web.mit.edu/bcs/nklab/media/pdfs/Dobs_2022.pdf) to other models and data.
 
+(work in progress, mainly focused on trying to reproduce the results first)
+
 **Roadmap**
 
 - [x] Replicate some parts of original paper (https://github.com/xnought/paper-implement/tree/main/language_network)
 - [x] Set up face localizer example w/ goal of applying to a resnet model
 	- [x] 5k positive (faces) from CelebA
 	- [x] 5k negative (objects) from COCO
-- [ ] Basic API around pandas for data examples, with positive and negative/control examples
-- [ ] Easy way to extract activations from the model
+- [ ] Extract activations from the resnet model
 - [ ] Localization analysis API around activations of the data points given each model
-- [ ] Visualize outputs
-- [ ] Setup way for other people to use
-- [ ] Optimize for lower memory usage and faster execution (batches)
+- [ ] Brief analysis on the image case
 
 ## Usage
 
