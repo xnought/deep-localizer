@@ -1,10 +1,10 @@
 <img src="https://github.com/user-attachments/assets/b00dc021-8e31-44be-9a69-ba33ed8054c6" width="800px">
 
-**DeepLocalizer**: A library to quickly find functional specialization in deep neural networks.
+**DeepLocalizer**: Quickly find functional specialization in deep neural networks. 
 
 Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Causally Task-Relevant Units](https://arxiv.org/abs/2411.02280) and [Brain-like functional specialization emerges spontaneously in deep neural networks](https://web.mit.edu/bcs/nklab/media/pdfs/Dobs_2022.pdf) to other models and data.
 
-(work in progress, mainly focused on trying to reproduce the results first)
+Stretch Goal: turn into a library that works on any model. 
 
 **Roadmap**
 
