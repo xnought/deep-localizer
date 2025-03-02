@@ -9,14 +9,16 @@ Stretch Goal: turn into a library that works on any model.
 **Roadmap**
 
 - [x] Replicate some parts of original paper (https://github.com/xnought/paper-implement/tree/main/language_network)
-- [x] Set up face localizer example w/ goal of applying to a resnet model
-	- [x] 5k positive (faces) from CelebA
-	- [x] 5k negative (objects) from COCO
-- [ ] Extract activations from the resnet model
-	- [x] test track the activations
-	- [ ] store activations on disk
-- [ ] Localization analysis API around activations of the data points given each model
-- [ ] Brief analysis on the image case
+- [ ] Write code from scratch to do analysis on face with resnet
+	- [x] Set up face localizer example w/ goal of applying to a resnet model
+		- [x] 5k positive (faces) from CelebA
+		- [x] 5k negative (objects) from COCO
+	- [ ] Extract activations from the resnet model
+		- [x] test track the activations
+		- [ ] store activations on disk
+	- [ ] Localization analysis API around activations of the data points given each model
+	- [ ] Brief analysis on the image case
+- [ ] Write general API from most helpful functions so others can easily use the library 
 
 ## Usage
 
