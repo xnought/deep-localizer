@@ -16,7 +16,7 @@ Stretch Goal: turn into a library that works on any model.
 	- [x] Extract activations from the resnet model
 		- [x] test track the activations
 		- [x] store activations on disk
-	- [ ] Contrast positive vs negative activations
+	- [x] Contrast positive vs negative activations
 	- [ ] Ablation w/ statistical tests on resnet
 - [ ] Write general API from most helpful functions so others can easily use the library 
 
