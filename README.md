@@ -13,11 +13,11 @@ Stretch Goal: turn into a library that works on any model.
 	- [x] Set up face localizer example w/ goal of applying to a resnet model
 		- [x] 5k positive (faces) from CelebA
 		- [x] 5k negative (objects) from COCO
-	- [ ] Extract activations from the resnet model
+	- [x] Extract activations from the resnet model
 		- [x] test track the activations
-		- [ ] store activations on disk
-	- [ ] Localization analysis API around activations of the data points given each model
-	- [ ] Brief analysis on the image case
+		- [x] store activations on disk
+	- [ ] Contrast positive vs negative activations
+	- [ ] Ablation w/ statistical tests on resnet
 - [ ] Write general API from most helpful functions so others can easily use the library 
 
 ## Usage
