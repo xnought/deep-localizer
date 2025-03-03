@@ -4,6 +4,7 @@
 
 Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Causally Task-Relevant Units](https://arxiv.org/abs/2411.02280) and [Brain-like functional specialization emerges spontaneously in deep neural networks](https://web.mit.edu/bcs/nklab/media/pdfs/Dobs_2022.pdf) to other models and data.
 
+[Face Localizer Resnet Report](https://www.donnybertucci.com/project/deeplocalizer) (IN PROGRESS) 
 
 > [!NOTE]
 > Currently working on the first example (resnet face localizer) in the /experiments folder
