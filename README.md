@@ -16,7 +16,7 @@ Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Ca
 **Roadmap**
 
 - [x] Replicate some parts of original paper (https://github.com/xnought/paper-implement/tree/main/language_network)
-- [ ] Write code from scratch to do analysis on face with resnet
+- [x] Write code from scratch to do analysis on face with resnet
 	- [x] Set up face localizer example w/ goal of applying to a resnet model
 		- [x] 5k positive (faces) from CelebA
 		- [x] 5k negative (objects) from COCO
@@ -26,8 +26,9 @@ Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Ca
 	- [x] Contrast positive vs negative activations
 	- [ ] Ablation w/ statistical tests on resnet
 		- [x] write code to ablate torch models easily 
-		- [ ] ablate given the top percent face activations
-		- [ ] Compare performance after ablation 
+		- [x] ablate given the top percent face activations
+		- [x] Compare performance after ablation
+- [ ] Write report on the resnet example and if localization seems to work and what evidence
 - [ ] Write general API from most helpful functions so others can easily use the library 
 
 
