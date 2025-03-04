@@ -11,7 +11,7 @@ Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Ca
 >
 > Once this is done, I'll write a report + write the library
 >
-> Update: got the first example running of CelebA(Faces) vs Objects(Coco). When I ablate the top 0.125% activations per layer, I get the same predictions only ~10% of the time for faces while I get > 90% of the time the same prediction for objects. 
+> Update: got the first example running of CelebA(Faces) vs Objects(Coco). When I ablate the top 0.125% activations per layer, I get the same predictions only ~10% of the time for faces while I get > 90% of the time the same prediction for objects. When I do global activation ablations I can reduce the face predictions to change 100% of the time, and 40% of the time for other inputs. Weird.
 
 **Roadmap**
 
