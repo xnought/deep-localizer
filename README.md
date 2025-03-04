@@ -24,7 +24,7 @@ Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Ca
 		- [x] test track the activations
 		- [x] store activations on disk
 	- [x] Contrast positive vs negative activations
-	- [ ] Ablation w/ statistical tests on resnet
+	- [x] Ablation w/ statistical tests on resnet
 		- [x] write code to ablate torch models easily 
 		- [x] ablate given the top percent face activations
 		- [x] Compare performance after ablation
