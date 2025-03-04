@@ -10,6 +10,8 @@ Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Ca
 > Currently working on the first example (resnet face localizer) in the /experiments folder
 >
 > Once this is done, I'll write a report + write the library
+>
+> Update: got the first example running of CelebA(Faces) vs Objects(Coco). When I ablate the top 0.125% activations per layer, I get the same predictions only ~10% of the time for faces while I get > 90% of the time the same prediction for objects. 
 
 **Roadmap**
 
