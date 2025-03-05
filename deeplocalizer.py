@@ -282,6 +282,76 @@ def visualize_top_activations(top_idxs, top_values, activation):
     plt.show()
 
 
+class AblateTorchModel:
+    def __init__(self, layers, ablate, scaler=0):
+        self.layers = layers
+        self.ablate = ablate
+        self.hooks = []
+        for l, a in zip(layers, ablate):
+            self.hooks.append(self.register_hook(l, a, scaler))
+
+    def remove_hooks(self):
+        for h in self.hooks:
+            h.remove()
+        self.hooks = []
+
+    def register_hook(self, layer, ablate, scaler):
+        def hook(module, inputs, outputs):
+            if len(ablate) > 0:
+                B = outputs.shape[0]
+                flat = outputs.view(B, -1)
+                flat[:, ablate] *= scaler
+            return outputs
+
+        return layer.register_forward_hook(hook)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, exception_traceback):
+        self.remove_hooks()
+
+
+def combine_batches(model_results: list[torch.Tensor] | list[tuple]):
+    assert len(model_results) > 0
+    if isinstance(model_results[0], (tuple, list)):
+        results = [[] for _ in range(len(model_results[0]))]
+        for j in range(len(model_results[0])):
+            col = [model_results[i][j] for i in len(model_results)]
+            results.append(torch.vstack(col))
+    else:
+        return torch.vstack(model_results)
+
+
+def ablate_network(
+    task: pd.DataFrame,
+    model_forward: Callable[[pd.DataFrame], Any],
+    layers_activations: list[torch.nn.Module],
+    to_ablate: dict[int, list[int]],
+    batch_size=32,
+    ablate_factor=0,
+):
+    N = len(task)
+    to_ablate_flat_idxs = [to_ablate[i] for i in range(len(layers_activations))]
+    model_results = []
+    with AblateTorchModel(layers_activations, to_ablate_flat_idxs, ablate_factor):
+        for i in tqdm(range(0, N, batch_size)):
+            batch = task.iloc[i : i + batch_size]
+            out = model_forward(batch)
+            model_results.append(out)
+    return combine_batches(model_results)
+
+
+# def ablate_task_network(
+#     df: pd.DataFrame,
+#     model_forward: Callable[[pd.DataFrame], Any],
+#     layers_activations: list[torch.nn.Module],
+#     to_ablate: dict[int, list[int]],
+#     batch_size=32,
+#     ablate_factor=0,
+# ):
+
+
 if __name__ == "__main__":
     from PIL import Image
     import os
@@ -290,31 +360,31 @@ if __name__ == "__main__":
     activations = None
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-    if not os.path.exists(CACHED_ACTIVATIONS):
-        from transformers import AutoImageProcessor, ResNetForImageClassification
+    from transformers import AutoImageProcessor, ResNetForImageClassification
 
-        processor = AutoImageProcessor.from_pretrained("microsoft/resnet-34")
-        model = ResNetForImageClassification.from_pretrained("microsoft/resnet-34")
-        model = model.to(DEVICE)
-        print("*Loaded Resnet34 from Huggingface")
+    processor = AutoImageProcessor.from_pretrained("microsoft/resnet-34")
+    model = ResNetForImageClassification.from_pretrained("microsoft/resnet-34")
+    model = model.to(DEVICE)
+    print("*Loaded Resnet34 from Huggingface")
 
-        task = pd.read_parquet("./experiments/data/tasks/face_task2k.parquet")
-        print("*Loaded Face Localizer Task")
+    task = pd.read_parquet("./experiments/data/tasks/face_task2k.parquet")
+    print("*Loaded Face Localizer Task")
 
-        # DEFINE HOW THE MODEL COMPUTES ACTIVATIONS
-        @torch.no_grad()
-        def resnet_forward(task_batch: pd.DataFrame):
-            image_paths = task_batch["data"]
-            images = [
-                Image.open(f"./experiments/data/{p}").convert("RGB")
-                for p in image_paths
-            ]
-            inputs = processor(images, return_tensors="pt").to(DEVICE)
-            return model(**inputs)
-
-        resnet_blocks = [
-            layer for stage in model.resnet.encoder.stages for layer in stage.layers
+    # DEFINE HOW THE MODEL COMPUTES ACTIVATIONS
+    @torch.no_grad()
+    def resnet_forward(task_batch: pd.DataFrame):
+        image_paths = task_batch["data"]
+        images = [
+            Image.open(f"./experiments/data/{p}").convert("RGB") for p in image_paths
         ]
+        inputs = processor(images, return_tensors="pt").to(DEVICE)
+        return model(**inputs)
+
+    resnet_blocks = [
+        layer for stage in model.resnet.encoder.stages for layer in stage.layers
+    ]
+
+    if not os.path.exists(CACHED_ACTIVATIONS):
         activations = compute_task_activations(
             df=task,
             model_forward=resnet_forward,
@@ -333,5 +403,16 @@ if __name__ == "__main__":
     # visualize_activations(overall_activation(activations), (4, 4), cmap="inferno")
 
     top_idxs, top_values = top_percent_global(activations, 0.25)
-    for n in top_idxs:
-        visualize_top_activations(top_idxs[n], top_values[n], activations[n])
+    # for n in top_idxs:
+    #     visualize_top_activations(top_idxs[n], top_values[n], activations[n])
+
+    results = ablate_network(
+        task=task.iloc[:50],
+        model_forward=resnet_forward,
+        layers_activations=resnet_blocks,
+        to_ablate=top_idxs,
+        batch_size=32,
+        ablate_factor=0,
+    )
+
+    print(results)
