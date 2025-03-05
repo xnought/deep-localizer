@@ -189,7 +189,7 @@ def visualize_activations(activations: list[torch.Tensor], grid=None, cmap="viri
     if grid is None:
         # first combine all the layers so can do argpartition
         for i, a in enumerate(activations):
-            plt.title(f"i={i}")
+            plt.title(f"Layer {i}")
             plt.imshow(squarify(a), cmap=cmap)
             plt.colorbar()
             plt.show()
@@ -198,7 +198,7 @@ def visualize_activations(activations: list[torch.Tensor], grid=None, cmap="viri
         for i, ax in enumerate(axes.flat):
             a = activations[i]
             im = ax.imshow(squarify(a), cmap=cmap)
-            ax.set_title(f"i={i}")
+            ax.set_title(f"Layer {i}")
             plt.colorbar(im, ax=ax)
             ax.axis("off")
         plt.show()
@@ -260,7 +260,9 @@ def top_percent_global(tensors: list[torch.Tensor], percent=1):
     return topk_global(tensors, k)
 
 
-def visualize_top_activations(top_idxs, top_values, activation):
+def visualize_top_activations(
+    top_idxs, top_values, activation, title_og="Original", title_top="Top P Percent"
+):
     import matplotlib.pyplot as plt
 
     plt.style.use("dark_background")
@@ -272,15 +274,17 @@ def visualize_top_activations(top_idxs, top_values, activation):
     canvas.view(-1)[idxs] = act
 
     fig, axes = plt.subplots(1, 2, figsize=(16, 9))
-    axes[0].set_title("Original")
+    axes[0].set_title(title_og)
     axes[0].imshow(squarify(activation), cmap="inferno")
 
-    axes[1].set_title("Top P Percent")
+    axes[1].set_title(title_top)
     axes[1].imshow(squarify(canvas), cmap="inferno")
     plt.show()
 
 
-def visualize_top_per_layer(top_idxs, activations):
+def visualize_top_per_layer(
+    top_idxs, activations, title="Percentage Top activations per layer"
+):
     import matplotlib.pyplot as plt
     import seaborn as sns
     import numpy as np
@@ -307,7 +311,7 @@ def visualize_top_per_layer(top_idxs, activations):
         linewidths=1,
     )
     ax.set(
-        title="Percentage Top activations per layer",
+        title=title,
         xticklabels=[],
         xticks=[],
         ylabel="Layers",
