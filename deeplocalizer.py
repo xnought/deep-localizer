@@ -91,12 +91,12 @@ def mean_accumulate_tensors(
 
 
 def accumulate_activations(
-    task: pd.DataFrame,
+    data: list[Any],
     model_forward: Callable[[list[Any]], Any],
     layers_activations: list[torch.nn.Module],
     batch_size=32,
 ) -> list[torch.Tensor]:
-    N = len(task)
+    N = len(data)
     assert N > 0, "Must have data!"
     assert len(layers_activations) > 0, "Must have layers we take activations from!"
     assert batch_size > 0, "batch size must be greater than 0"
@@ -104,8 +104,8 @@ def accumulate_activations(
     accumulate = [None] * len(layers_activations)  # we will be accumulating the tensors
     with ActivationTracker(layers=layers_activations) as tracker:
         for i in tqdm(range(0, N, batch_size)):
-            batch = task.iloc[i : i + batch_size]
-            model_forward(batch["data"])
+            batch = data[i : i + batch_size]
+            model_forward(batch)
             mean_accumulate_tensors(
                 accumulator=accumulate, tensors=tracker.list_activations, total_length=N
             )
@@ -127,10 +127,10 @@ def compute_task_activations(
     control = df[df["positive"] == False]
 
     task_acts = accumulate_activations(
-        task, model_forward, layers_activations, batch_size
+        task["data"], model_forward, layers_activations, batch_size
     )
     control_acts = accumulate_activations(
-        control, model_forward, layers_activations, batch_size
+        control["data"], model_forward, layers_activations, batch_size
     )
 
     # subtract out the control from the task
@@ -391,7 +391,7 @@ if __name__ == "__main__":
         layer for stage in model.resnet.encoder.stages for layer in stage.layers
     ]
 
-    if not os.path.exists(CACHED_ACTIVATIONS):
+    if True:
         activations = compute_task_activations(
             df=task,
             model_forward=resnet_forward,
