@@ -194,6 +194,7 @@ if __name__ == "__main__":
     ]
 
     CACHED_ACTIVATIONS = "resnet_face.safetensors"
+    activations = None
     if not os.path.exists(CACHED_ACTIVATIONS):
         activations = compute_task_activations(
             df=task,
@@ -206,5 +207,7 @@ if __name__ == "__main__":
         save_activations_to_disk(activations, CACHED_ACTIVATIONS)
         print("*Saved Activations to Disk")
     else:
-        loaded = load_activations_from_disk(CACHED_ACTIVATIONS)
+        activations = load_activations_from_disk(CACHED_ACTIVATIONS)
         print(f"*Loaded Activations from {CACHED_ACTIVATIONS}")
+
+    print(activations)
