@@ -119,6 +119,7 @@ def compute_task_activations(
     layers_activations: list[torch.nn.Module],
     batch_size=32,
 ):
+    assert "data" in df.columns, "Must have a column named data"
     assert "positive" in df.columns, (
         "Must have a column named 'positive' which is either True (task) or False (control)"
     )
@@ -349,14 +350,50 @@ def ablated_inference(
         return regular_inference(data, model_forward, batch_size)
 
 
-# def ablate_task_network(
-#     df: pd.DataFrame,
-#     model_forward: Callable[[pd.DataFrame], Any],
-#     layers_activations: list[torch.nn.Module],
-#     to_ablate: dict[int, list[int]],
-#     batch_size=32,
-#     ablate_factor=0,
-# ):
+def task_ablated(
+    df: pd.DataFrame,
+    model_forward: Callable[[pd.DataFrame], Any],
+    layers_activations: list[torch.nn.Module],
+    to_ablate: dict[int, list[int]],
+    batch_size=32,
+    ablate_factor=0,
+):
+    assert "data" in df.columns, "Must have a column named data"
+    assert "positive" in df.columns, (
+        "Must have a column named 'positive' which is either True (task) or False (control)"
+    )
+
+    task = df[df["positive"] == True]
+    ablated_task = ablated_inference(
+        task["data"],
+        model_forward,
+        layers_activations,
+        to_ablate,
+        batch_size,
+        ablate_factor,
+    )
+    regular_task = regular_inference(
+        task["data"],
+        model_forward,
+        batch_size,
+    )
+
+    control = df[df["positive"] == False]
+    ablated_control = ablated_inference(
+        control["data"],
+        model_forward,
+        layers_activations,
+        to_ablate,
+        batch_size,
+        ablate_factor,
+    )
+    regular_control = regular_inference(
+        control["data"],
+        model_forward,
+        batch_size,
+    )
+
+    return (ablated_task, regular_task), (ablated_control, regular_control)
 
 
 if __name__ == "__main__":
@@ -391,7 +428,7 @@ if __name__ == "__main__":
         layer for stage in model.resnet.encoder.stages for layer in stage.layers
     ]
 
-    if True:
+    if not os.path.exists(CACHED_ACTIVATIONS):
         activations = compute_task_activations(
             df=task,
             model_forward=resnet_forward,
@@ -409,7 +446,7 @@ if __name__ == "__main__":
     # visualize_activations(activations, (4, 4))
     # visualize_activations(overall_activation(activations), (4, 4), cmap="inferno")
 
-    top_idxs, top_values = top_percent_global(activations, 20)
+    top_idxs, top_values = top_percent_global(activations, 1)
     # for idxs, values, tensor in zip(top_idxs, top_values, activations):
     #     if len(idxs) == 0:
     #         continue
@@ -424,9 +461,8 @@ if __name__ == "__main__":
     #     ablate_factor=0,
     # )
 
-    # print(results)
-    out = regular_inference(["dog.jpeg"], resnet_forward)
-    print(model.config.id2label[out.argmax(-1).item()])
-
-    out = ablated_inference(["dog.jpeg"], resnet_forward, resnet_blocks, top_idxs)
-    print(model.config.id2label[out.argmax(-1).item()])
+    (ablated_task, regular_task), (ablated_control, regular_control) = task_ablated(
+        task.sample(100), resnet_forward, resnet_blocks, top_idxs
+    )
+    print(ablated_task.shape, regular_task.shape)
+    print(ablated_control.shape, regular_control.shape)
