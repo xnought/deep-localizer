@@ -280,6 +280,42 @@ def visualize_top_activations(top_idxs, top_values, activation):
     plt.show()
 
 
+def visualize_top_per_layer(top_idxs, activations):
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import numpy as np
+
+    plt.style.use("dark_background")
+
+    total_lengths = [prod(a.shape) for a in activations]
+    percentages = (
+        np.array([len(top_idxs[i]) / l for i, l in enumerate(total_lengths)]).reshape(
+            (-1, 1)
+        )
+        * 100
+    )
+    labels = np.array([f"{p[0]:.2f}%" for p in percentages]).reshape(percentages.shape)
+
+    plt.figure(figsize=(4, 6))
+    ax = sns.heatmap(
+        percentages,
+        cmap="inferno",
+        annot=labels,
+        annot_kws={"fontsize": 10},
+        fmt="s",
+        linecolor="white",
+        linewidths=1,
+    )
+    ax.set(
+        title="Percentage Top activations per layer",
+        xticklabels=[],
+        xticks=[],
+        ylabel="Layers",
+    )
+
+    plt.show()
+
+
 class AblateTorchModel:
     def __init__(self, layers, ablate, scaler=0):
         self.layers = layers
@@ -468,6 +504,9 @@ if __name__ == "__main__":
             if len(idxs) == 0:
                 continue
             visualize_top_activations(idxs, values, tensor)
+
+    if VIS:
+        visualize_top_per_layer(top_idxs, activations)
 
     # See the performance on the validation set, not what we observed to see if it works!
     (ablated_task, regular_task), (ablated_control, regular_control) = task_ablated(
