@@ -415,71 +415,75 @@ if __name__ == "__main__":
     model = model.to(DEVICE)
     print("*Loaded Resnet34 from Huggingface")
 
-    task = pd.read_parquet("./experiments/data/tasks/face_task2k.parquet")
+    df = pd.read_parquet("./data/task_face_localizer.parquet")
+    task, validation = df[df["validation"] == False], df[df["validation"] == True]
     print("*Loaded Face Localizer Task")
 
-    # DEFINE HOW THE MODEL COMPUTES ACTIVATIONS
-    @torch.no_grad()
-    def resnet_forward(image_paths):
-        images = [
-            Image.open(f"./experiments/data/{p}").convert("RGB") for p in image_paths
-        ]
-        inputs = processor(images, return_tensors="pt").to(DEVICE)
-        outputs = model(**inputs)
-        return outputs.logits
+    print(len(task))
+    print(len(validation))
 
-    resnet_blocks = [
-        layer for stage in model.resnet.encoder.stages for layer in stage.layers
-    ]
+    # # DEFINE HOW THE MODEL COMPUTES ACTIVATIONS
+    # @torch.no_grad()
+    # def resnet_forward(image_paths):
+    #     images = [
+    #         Image.open(f"./experiments/data/{p}").convert("RGB") for p in image_paths
+    #     ]
+    #     inputs = processor(images, return_tensors="pt").to(DEVICE)
+    #     outputs = model(**inputs)
+    #     return outputs.logits
 
-    if not os.path.exists(CACHED_ACTIVATIONS):
-        activations = compute_task_activations(
-            df=task,
-            model_forward=resnet_forward,
-            layers_activations=resnet_blocks,
-            batch_size=32,
-        )
-        print("*Computed Activations")
+    # resnet_blocks = [
+    #     layer for stage in model.resnet.encoder.stages for layer in stage.layers
+    # ]
 
-        save_activations_to_disk(activations, CACHED_ACTIVATIONS)
-        print("*Saved Activations to Disk")
-    else:
-        activations = load_activations_from_disk(CACHED_ACTIVATIONS, DEVICE)
-        print(f"*Loaded Activations from {CACHED_ACTIVATIONS}")
+    # if not os.path.exists(CACHED_ACTIVATIONS):
+    #     activations = compute_task_activations(
+    #         df=task,
+    #         model_forward=resnet_forward,
+    #         layers_activations=resnet_blocks,
+    #         batch_size=32,
+    #     )
+    #     print("*Computed Activations")
 
-    if VIS:
-        visualize_activations(activations, (4, 4))
-        visualize_activations(overall_activation(activations), (4, 4), cmap="inferno")
+    #     save_activations_to_disk(activations, CACHED_ACTIVATIONS)
+    #     print("*Saved Activations to Disk")
+    # else:
+    #     activations = load_activations_from_disk(CACHED_ACTIVATIONS, DEVICE)
+    #     print(f"*Loaded Activations from {CACHED_ACTIVATIONS}")
 
-    top_percent = 1
-    top_idxs, top_values = top_percent_global(activations, top_percent)
-    print(f"*Computed top {top_percent} percent activations to ablate")
+    # if VIS:
+    #     visualize_activations(activations, (4, 4))
+    #     visualize_activations(overall_activation(activations), (4, 4), cmap="inferno")
 
-    if VIS:
-        for idxs, values, tensor in zip(top_idxs, top_values, activations):
-            if len(idxs) == 0:
-                continue
-            visualize_top_activations(idxs, values, tensor)
+    # top_percent = 1
+    # top_idxs, top_values = top_percent_global(activations, top_percent)
+    # print(f"*Computed top {top_percent} percent activations to ablate")
 
-    (ablated_task, regular_task), (ablated_control, regular_control) = task_ablated(
-        task.sample(500), resnet_forward, resnet_blocks, top_idxs
-    )
-    print("*Computed Ablated Model versus Regular")
+    # if VIS:
+    #     for idxs, values, tensor in zip(top_idxs, top_values, activations):
+    #         if len(idxs) == 0:
+    #             continue
+    #         visualize_top_activations(idxs, values, tensor)
 
-    regular_task_preds = regular_task.argmax(-1)
-    ablated_task_preds = ablated_task.argmax(-1)
-    shared_prediction = (regular_task_preds == ablated_task_preds).sum() / len(
-        regular_task_preds
-    )
-    print(
-        f"How did the predictions for the face images change after ablation? Answer: {((1 - shared_prediction) * 100).item()}%"
-    )
+    # (ablated_task, regular_task), (ablated_control, regular_control) = task_ablated(
+    #     task.sample(500), resnet_forward, resnet_blocks, top_idxs
+    # )
+    # print("*Computed Ablated Model versus Regular")
 
-    regular_control_preds = regular_control.argmax(-1)
-    ablated_control_preds = ablated_control.argmax(-1)
-    shared_prediction = (regular_control_preds == ablated_control_preds).sum() / len(
-        regular_control_preds
-    )
-    print(
-        f"How many changed for the control? Answer: {((1 - shared_prediction) * 100).item()}%"
-    )
+    # regular_task_preds = regular_task.argmax(-1)
+    # ablated_task_preds = ablated_task.argmax(-1)
+    # shared_prediction = (regular_task_preds == ablated_task_preds).sum() / len(
+    #     regular_task_preds
+    # )
+    # print(
+    #     f"How did the predictions for the face images change after ablation? Answer: {((1 - shared_prediction) * 100).item()}%"
+    # )
+
+    # regular_control_preds = regular_control.argmax(-1)
+    # ablated_control_preds = ablated_control.argmax(-1)
+    # shared_prediction = (regular_control_preds == ablated_control_preds).sum() / len(
+    #     regular_control_preds
+    # )
+    # print(
+    #     f"How many changed for the control? Answer: {((1 - shared_prediction) * 100).item()}%"
+    # )
