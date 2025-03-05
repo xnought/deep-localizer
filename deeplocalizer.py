@@ -3,6 +3,9 @@ import pandas as pd
 from tqdm import tqdm
 from typing import Callable, Any
 import os
+import matplotlib.pyplot as plt
+
+plt.style.use("dark_background")
 
 
 class ActivationTracker:
@@ -182,25 +185,22 @@ def squarify(t):
 
 
 def visualize_activations(activations: list[torch.Tensor], grid=None, cmap="viridis"):
-    import matplotlib.pyplot as plt
-
-    plt.style.use("dark_background")
-
     if grid is None:
         # first combine all the layers so can do argpartition
         for i, a in enumerate(activations):
             plt.title(f"Layer {i}")
-            plt.imshow(squarify(a), cmap=cmap)
+            plt.imshow(squarify(a), cmap=cmap, aspect="auto")
             plt.colorbar()
             plt.show()
     else:
         fig, axes = plt.subplots(*grid, figsize=(16, 9))
+        fig.suptitle("Absolute activations")
         for i, ax in enumerate(axes.flat):
             a = activations[i]
-            im = ax.imshow(squarify(a), cmap=cmap)
+            im = ax.imshow(squarify(a), cmap=cmap, aspect="auto")
             ax.set_title(f"Layer {i}")
             plt.colorbar(im, ax=ax)
-            ax.axis("off")
+            no_ticks(ax)
         plt.show()
 
 
@@ -260,36 +260,44 @@ def top_percent_global(tensors: list[torch.Tensor], percent=1):
     return topk_global(tensors, k)
 
 
-def visualize_top_activations(
-    top_idxs, top_values, activation, title_og="Original", title_top="Top P Percent"
-):
-    import matplotlib.pyplot as plt
+def no_ticks(ax):
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.set_xticks([])
+    ax.set_yticks([])
 
-    plt.style.use("dark_background")
 
+def visualize_top_activation(ax, top_idxs, top_values, activation, title=""):
     canvas = torch.zeros(activation.shape)
-    act = torch.tensor(top_values)
-    idxs = torch.tensor(top_idxs)
+    if len(top_idxs) > 0:
+        act = torch.tensor(top_values)
+        idxs = torch.tensor(top_idxs)
+        canvas.view(-1)[idxs] = act
+    ax.set_title(title)
+    no_ticks(ax)
+    im = ax.imshow(squarify(canvas), cmap="inferno", aspect="auto")
+    plt.colorbar(im, ax=ax)
+    return ax
 
-    canvas.view(-1)[idxs] = act
 
-    fig, axes = plt.subplots(1, 2, figsize=(16, 9))
-    axes[0].set_title(title_og)
-    axes[0].imshow(squarify(activation), cmap="inferno")
-
-    axes[1].set_title(title_top)
-    axes[1].imshow(squarify(canvas), cmap="inferno")
+def visualize_top_activations(
+    top_idxs, top_values, activations, grid=(4, 4), title="Top % activations showing"
+):
+    fig, axes = plt.subplots(*grid, figsize=(16, 9))
+    fig.suptitle(title)
+    for i, ax in enumerate(axes.flat):
+        a = activations[i]
+        top_idx = top_idxs[i]
+        top_value = top_values[i]
+        visualize_top_activation(ax, top_idx, top_value, a, title=f"Layer {i}")
     plt.show()
 
 
 def visualize_top_per_layer(
     top_idxs, activations, title="Percentage Top activations per layer"
 ):
-    import matplotlib.pyplot as plt
     import seaborn as sns
     import numpy as np
-
-    plt.style.use("dark_background")
 
     total_lengths = [prod(a.shape) for a in activations]
     percentages = (
@@ -495,22 +503,14 @@ if __name__ == "__main__":
         activations = load_activations_from_disk(CACHED_ACTIVATIONS, DEVICE)
         print(f"*Loaded Activations from {CACHED_ACTIVATIONS}")
 
-    if VIS:
-        visualize_activations(activations, (4, 4))
-        visualize_activations(overall_activation(activations), (4, 4), cmap="inferno")
-
-    top_percent = 1
+    top_percent = 0.5
     top_idxs, top_values = top_percent_global(activations, top_percent)
     print(f"*Computed top {top_percent} percent activations to ablate")
 
-    if VIS:
-        for idxs, values, tensor in zip(top_idxs, top_values, activations):
-            if len(idxs) == 0:
-                continue
-            visualize_top_activations(idxs, values, tensor)
-
-    if VIS:
-        visualize_top_per_layer(top_idxs, activations)
+    # if VIS:
+    visualize_activations(overall_activation(activations), (4, 4), cmap="inferno")
+    visualize_top_activations(top_idxs, top_values, activations, (4, 4))
+    visualize_top_per_layer(top_idxs, activations)
 
     # See the performance on the validation set, not what we observed to see if it works!
     (ablated_task, regular_task), (ablated_control, regular_control) = task_ablated(
