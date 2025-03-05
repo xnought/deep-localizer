@@ -448,7 +448,7 @@ if __name__ == "__main__":
         visualize_activations(activations, (4, 4))
         visualize_activations(overall_activation(activations), (4, 4), cmap="inferno")
 
-    top_idxs, top_values = top_percent_global(activations, 1)
+    top_idxs, top_values = top_percent_global(activations, 0.25)
     print("*Computed top 1 percent activations to ablate")
 
     if VIS:
