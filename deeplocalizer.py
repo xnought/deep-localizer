@@ -97,6 +97,10 @@ def accumulate_activations(
     batch_size=32,
 ) -> list[torch.Tensor]:
     N = len(task)
+    assert N > 0, "Must have data!"
+    assert len(layers_activations) > 0, "Must have layers we take activations from!"
+    assert batch_size > 0, "batch size must be greater than 0"
+
     accumulate = [None] * len(layers_activations)  # we will be accumulating the tensors
     with ActivationTracker(layers=layers_activations) as tracker:
         for i in tqdm(range(0, N, batch_size)):
@@ -109,9 +113,61 @@ def accumulate_activations(
     return accumulate
 
 
+def compute_task_activations(
+    df: pd.DataFrame,
+    model_forward: Callable[[pd.DataFrame], Any],
+    layers_activations: list[torch.nn.Module],
+    batch_size=32,
+):
+    assert "positive" in df.columns, (
+        "Must have a column named 'positive' which is either True (task) or False (control)"
+    )
+
+    task = df[df["positive"] == True]
+    control = df[df["positive"] == False]
+
+    task_acts = accumulate_activations(
+        task, model_forward, layers_activations, batch_size
+    )
+    control_acts = accumulate_activations(
+        control, model_forward, layers_activations, batch_size
+    )
+
+    # subtract out the control from the task
+    regions_of_interest = [t - c for t, c in zip(task_acts, control_acts)]
+
+    return regions_of_interest
+
+
+def layer_name(i: int):
+    return str(i)
+
+
+def save_activations_to_disk(activations: list[torch.Tensor], filename: str):
+    from safetensors.torch import save_file
+
+    export = {layer_name(i): t for i, t in enumerate(activations)}
+    save_file(export, filename)
+
+
+def load_activations_from_disk(filename: str) -> list[torch.Tensor]:
+    from safetensors.torch import safe_open
+    import os
+
+    assert os.path.exists(filename), "File must exist!"
+
+    tensors = {}
+    with safe_open(filename, framework="pt") as f:
+        for k in f.keys():
+            tensors[k] = f.get_tensor(k)
+
+    return [tensors[layer_name(i)] for i in range(len(tensors))]
+
+
 if __name__ == "__main__":
     from transformers import AutoImageProcessor, ResNetForImageClassification
     from PIL import Image
+    import os
 
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -121,7 +177,6 @@ if __name__ == "__main__":
     print("*Loaded Resnet34 from Huggingface")
 
     task = pd.read_parquet("./experiments/data/tasks/face_task2k.parquet")
-    small_task = task.sample(500)
     print("*Loaded Face Localizer Task")
 
     # DEFINE HOW THE MODEL COMPUTES ACTIVATIONS
@@ -137,10 +192,19 @@ if __name__ == "__main__":
     resnet_blocks = [
         layer for stage in model.resnet.encoder.stages for layer in stage.layers
     ]
-    acts = accumulate_activations(
-        task=small_task,
-        model_forward=resnet_forward,
-        layers_activations=resnet_blocks,
-        batch_size=32,
-    )
-    print("*Computed Activations")
+
+    CACHED_ACTIVATIONS = "resnet_face.safetensors"
+    if not os.path.exists(CACHED_ACTIVATIONS):
+        activations = compute_task_activations(
+            df=task,
+            model_forward=resnet_forward,
+            layers_activations=resnet_blocks,
+            batch_size=32,
+        )
+        print("*Computed Activations")
+
+        save_activations_to_disk(activations, CACHED_ACTIVATIONS)
+        print("*Saved Activations to Disk")
+    else:
+        loaded = load_activations_from_disk(CACHED_ACTIVATIONS)
+        print(f"*Loaded Activations from {CACHED_ACTIVATIONS}")

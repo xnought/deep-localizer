@@ -29,7 +29,7 @@ Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Ca
 		- [x] ablate given the top percent face activations
 		- [x] Compare performance after ablation
 - [ ] Write general API from most helpful functions so others can easily use the library 
-	- [ ] Activation computation
+	- [x] Activation computation
 	- [ ] Analysis computation
 - [ ] Write report on the resnet example and if localization seems to work and what evidence
 
