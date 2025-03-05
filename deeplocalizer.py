@@ -92,7 +92,7 @@ def mean_accumulate_tensors(
 
 def accumulate_activations(
     task: pd.DataFrame,
-    model_forward: Callable[[pd.DataFrame], Any],
+    model_forward: Callable[[list[Any]], Any],
     layers_activations: list[torch.nn.Module],
     batch_size=32,
 ) -> list[torch.Tensor]:
@@ -105,7 +105,7 @@ def accumulate_activations(
     with ActivationTracker(layers=layers_activations) as tracker:
         for i in tqdm(range(0, N, batch_size)):
             batch = task.iloc[i : i + batch_size]
-            model_forward(batch)
+            model_forward(batch["data"])
             mean_accumulate_tensors(
                 accumulator=accumulate, tensors=tracker.list_activations, total_length=N
             )
@@ -115,7 +115,7 @@ def accumulate_activations(
 
 def compute_task_activations(
     df: pd.DataFrame,
-    model_forward: Callable[[pd.DataFrame], Any],
+    model_forward: Callable[[list[Any]], Any],
     layers_activations: list[torch.nn.Module],
     batch_size=32,
 ):
@@ -234,15 +234,12 @@ def flat_idx_to_layer_idx_fast(flat_idxs, edges):
 
 
 def format_topk_global_return(tensors, layers_idxs):
-    result_idxs = {}
-    result_values = {}
+    result_idxs = [[] for _ in range(len(tensors))]
+    result_values = [[] for _ in range(len(tensors))]
     for layer_idx, layer_flat_idx in layers_idxs:
         t = tensors[layer_idx]
-        append_array_at_key(result_idxs, layer_idx.item(), layer_flat_idx.item())
-        append_array_at_key(
-            result_values, layer_idx.item(), t.view(-1)[layer_flat_idx].item()
-        )
-
+        result_idxs[layer_idx].append(layer_flat_idx.item())
+        result_values[layer_idx].append(t.view(-1)[layer_flat_idx].item())
     return result_idxs, result_values
 
 
@@ -314,32 +311,42 @@ class AblateTorchModel:
 
 def combine_batches(model_results: list[torch.Tensor] | list[tuple]):
     assert len(model_results) > 0
-    if isinstance(model_results[0], (tuple, list)):
-        results = [[] for _ in range(len(model_results[0]))]
+    if isinstance(model_results[0], tuple):
+        results = [None for _ in range(len(model_results[0]))]
         for j in range(len(model_results[0])):
-            col = [model_results[i][j] for i in len(model_results)]
-            results.append(torch.vstack(col))
+            col = [model_results[i][j] for i in range(len(model_results))]
+            for c in col:
+                print(c.shape)
+            results[j] = torch.cat(col)
+        return tuple(results)
     else:
-        return torch.vstack(model_results)
+        return torch.cat(model_results)
 
 
-def ablate_network(
-    task: pd.DataFrame,
-    model_forward: Callable[[pd.DataFrame], Any],
+def regular_inference(
+    data: list[Any],
+    model_forward: Callable[[list[Any]], Any],
+    batch_size=32,
+):
+    N = len(data)
+    model_results = []
+    for i in tqdm(range(0, N, batch_size)):
+        batch = data[i : i + batch_size]
+        out = model_forward(batch)
+        model_results.append(out)
+    return combine_batches(model_results)
+
+
+def ablated_inference(
+    data: list[Any],
+    model_forward: Callable[[list[Any]], Any],
     layers_activations: list[torch.nn.Module],
-    to_ablate: dict[int, list[int]],
+    to_ablate: list[list[int]],
     batch_size=32,
     ablate_factor=0,
-):
-    N = len(task)
-    to_ablate_flat_idxs = [to_ablate[i] for i in range(len(layers_activations))]
-    model_results = []
-    with AblateTorchModel(layers_activations, to_ablate_flat_idxs, ablate_factor):
-        for i in tqdm(range(0, N, batch_size)):
-            batch = task.iloc[i : i + batch_size]
-            out = model_forward(batch)
-            model_results.append(out)
-    return combine_batches(model_results)
+) -> torch.Tensor | tuple:
+    with AblateTorchModel(layers_activations, to_ablate, ablate_factor):
+        return regular_inference(data, model_forward, batch_size)
 
 
 # def ablate_task_network(
@@ -372,13 +379,13 @@ if __name__ == "__main__":
 
     # DEFINE HOW THE MODEL COMPUTES ACTIVATIONS
     @torch.no_grad()
-    def resnet_forward(task_batch: pd.DataFrame):
-        image_paths = task_batch["data"]
+    def resnet_forward(image_paths):
         images = [
             Image.open(f"./experiments/data/{p}").convert("RGB") for p in image_paths
         ]
         inputs = processor(images, return_tensors="pt").to(DEVICE)
-        return model(**inputs)
+        outputs = model(**inputs)
+        return outputs.logits
 
     resnet_blocks = [
         layer for stage in model.resnet.encoder.stages for layer in stage.layers
@@ -402,17 +409,24 @@ if __name__ == "__main__":
     # visualize_activations(activations, (4, 4))
     # visualize_activations(overall_activation(activations), (4, 4), cmap="inferno")
 
-    top_idxs, top_values = top_percent_global(activations, 0.25)
-    # for n in top_idxs:
-    #     visualize_top_activations(top_idxs[n], top_values[n], activations[n])
+    top_idxs, top_values = top_percent_global(activations, 20)
+    # for idxs, values, tensor in zip(top_idxs, top_values, activations):
+    #     if len(idxs) == 0:
+    #         continue
+    #     visualize_top_activations(idxs, values, tensor)
 
-    results = ablate_network(
-        task=task.iloc[:50],
-        model_forward=resnet_forward,
-        layers_activations=resnet_blocks,
-        to_ablate=top_idxs,
-        batch_size=32,
-        ablate_factor=0,
-    )
+    # results = ablated_inference(
+    #     task=task.iloc[:50],
+    #     model_forward=resnet_forward,
+    #     layers_activations=resnet_blocks,
+    #     to_ablate=top_idxs,
+    #     batch_size=32,
+    #     ablate_factor=0,
+    # )
 
-    print(results)
+    # print(results)
+    out = regular_inference(["dog.jpeg"], resnet_forward)
+    print(model.config.id2label[out.argmax(-1).item()])
+
+    out = ablated_inference(["dog.jpeg"], resnet_forward, resnet_blocks, top_idxs)
+    print(model.config.id2label[out.argmax(-1).item()])
