@@ -2,6 +2,7 @@ import torch
 import pandas as pd
 from tqdm import tqdm
 from typing import Callable, Any
+import os
 
 
 class ActivationTracker:
@@ -153,7 +154,6 @@ def save_activations_to_disk(activations: list[torch.Tensor], filename: str):
 
 def load_activations_from_disk(filename: str, device="cpu") -> list[torch.Tensor]:
     from safetensors.torch import safe_open
-    import os
 
     assert os.path.exists(filename), "File must exist!"
 
@@ -396,9 +396,17 @@ def task_ablated(
     return (ablated_task, regular_task), (ablated_control, regular_control)
 
 
+def load_task(filename: str):
+    assert os.path.exists(filename), "task file must exist"
+
+    df = pd.read_parquet(filename)
+    task = df[df["validation"] == False]
+    validation = df[df["validation"] == True]
+    return task, validation
+
+
 if __name__ == "__main__":
     from PIL import Image
-    import os
     import numpy as np
 
     np.random.seed(0)  # for reproducibility since I use df.sample() from numpy
@@ -415,75 +423,72 @@ if __name__ == "__main__":
     model = model.to(DEVICE)
     print("*Loaded Resnet34 from Huggingface")
 
-    df = pd.read_parquet("./data/task_face_localizer.parquet")
-    task, validation = df[df["validation"] == False], df[df["validation"] == True]
+    task, valid = load_task("./data/task_face_localizer.parquet")
     print("*Loaded Face Localizer Task")
 
-    print(len(task))
-    print(len(validation))
+    # DEFINE HOW THE MODEL COMPUTES ACTIVATIONS
+    @torch.no_grad()
+    def resnet_forward(image_paths):
+        images = [
+            Image.open(f"./experiments/data/{p}").convert("RGB") for p in image_paths
+        ]
+        inputs = processor(images, return_tensors="pt").to(DEVICE)
+        outputs = model(**inputs)
+        return outputs.logits
 
-    # # DEFINE HOW THE MODEL COMPUTES ACTIVATIONS
-    # @torch.no_grad()
-    # def resnet_forward(image_paths):
-    #     images = [
-    #         Image.open(f"./experiments/data/{p}").convert("RGB") for p in image_paths
-    #     ]
-    #     inputs = processor(images, return_tensors="pt").to(DEVICE)
-    #     outputs = model(**inputs)
-    #     return outputs.logits
+    resnet_blocks = [
+        layer for stage in model.resnet.encoder.stages for layer in stage.layers
+    ]
 
-    # resnet_blocks = [
-    #     layer for stage in model.resnet.encoder.stages for layer in stage.layers
-    # ]
+    if not os.path.exists(CACHED_ACTIVATIONS):
+        activations = compute_task_activations(
+            df=task,
+            model_forward=resnet_forward,
+            layers_activations=resnet_blocks,
+            batch_size=32,
+        )
+        print("*Computed Activations")
 
-    # if not os.path.exists(CACHED_ACTIVATIONS):
-    #     activations = compute_task_activations(
-    #         df=task,
-    #         model_forward=resnet_forward,
-    #         layers_activations=resnet_blocks,
-    #         batch_size=32,
-    #     )
-    #     print("*Computed Activations")
+        save_activations_to_disk(activations, CACHED_ACTIVATIONS)
+        print("*Saved Activations to Disk")
+    else:
+        activations = load_activations_from_disk(CACHED_ACTIVATIONS, DEVICE)
+        print(f"*Loaded Activations from {CACHED_ACTIVATIONS}")
 
-    #     save_activations_to_disk(activations, CACHED_ACTIVATIONS)
-    #     print("*Saved Activations to Disk")
-    # else:
-    #     activations = load_activations_from_disk(CACHED_ACTIVATIONS, DEVICE)
-    #     print(f"*Loaded Activations from {CACHED_ACTIVATIONS}")
+    if VIS:
+        visualize_activations(activations, (4, 4))
+        visualize_activations(overall_activation(activations), (4, 4), cmap="inferno")
 
-    # if VIS:
-    #     visualize_activations(activations, (4, 4))
-    #     visualize_activations(overall_activation(activations), (4, 4), cmap="inferno")
+    top_percent = 1
+    top_idxs, top_values = top_percent_global(activations, top_percent)
+    print(f"*Computed top {top_percent} percent activations to ablate")
 
-    # top_percent = 1
-    # top_idxs, top_values = top_percent_global(activations, top_percent)
-    # print(f"*Computed top {top_percent} percent activations to ablate")
+    if VIS:
+        for idxs, values, tensor in zip(top_idxs, top_values, activations):
+            if len(idxs) == 0:
+                continue
+            visualize_top_activations(idxs, values, tensor)
 
-    # if VIS:
-    #     for idxs, values, tensor in zip(top_idxs, top_values, activations):
-    #         if len(idxs) == 0:
-    #             continue
-    #         visualize_top_activations(idxs, values, tensor)
+    # See the performance on the validation set, not what we observed to see if it works!
+    (ablated_task, regular_task), (ablated_control, regular_control) = task_ablated(
+        valid, resnet_forward, resnet_blocks, top_idxs
+    )
+    print("*Computed Ablated Model versus Regular")
 
-    # (ablated_task, regular_task), (ablated_control, regular_control) = task_ablated(
-    #     task.sample(500), resnet_forward, resnet_blocks, top_idxs
-    # )
-    # print("*Computed Ablated Model versus Regular")
+    regular_task_preds = regular_task.argmax(-1)
+    ablated_task_preds = ablated_task.argmax(-1)
+    shared_prediction = (regular_task_preds == ablated_task_preds).sum() / len(
+        regular_task_preds
+    )
+    print(
+        f"How did the predictions for the face images change after ablation? Answer: {((1 - shared_prediction) * 100).item()}%"
+    )
 
-    # regular_task_preds = regular_task.argmax(-1)
-    # ablated_task_preds = ablated_task.argmax(-1)
-    # shared_prediction = (regular_task_preds == ablated_task_preds).sum() / len(
-    #     regular_task_preds
-    # )
-    # print(
-    #     f"How did the predictions for the face images change after ablation? Answer: {((1 - shared_prediction) * 100).item()}%"
-    # )
-
-    # regular_control_preds = regular_control.argmax(-1)
-    # ablated_control_preds = ablated_control.argmax(-1)
-    # shared_prediction = (regular_control_preds == ablated_control_preds).sum() / len(
-    #     regular_control_preds
-    # )
-    # print(
-    #     f"How many changed for the control? Answer: {((1 - shared_prediction) * 100).item()}%"
-    # )
+    regular_control_preds = regular_control.argmax(-1)
+    ablated_control_preds = ablated_control.argmax(-1)
+    shared_prediction = (regular_control_preds == ablated_control_preds).sum() / len(
+        regular_control_preds
+    )
+    print(
+        f"How many changed for the control? Answer: {((1 - shared_prediction) * 100).item()}%"
+    )
