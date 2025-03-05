@@ -399,6 +399,9 @@ def task_ablated(
 if __name__ == "__main__":
     from PIL import Image
     import os
+    import numpy as np
+
+    np.random.seed(0)  # for reproducibility since I use df.sample() from numpy
 
     CACHED_ACTIVATIONS = "resnet_face.safetensors"
     activations = None
@@ -448,8 +451,9 @@ if __name__ == "__main__":
         visualize_activations(activations, (4, 4))
         visualize_activations(overall_activation(activations), (4, 4), cmap="inferno")
 
-    top_idxs, top_values = top_percent_global(activations, 0.25)
-    print("*Computed top 1 percent activations to ablate")
+    top_percent = 1
+    top_idxs, top_values = top_percent_global(activations, top_percent)
+    print(f"*Computed top {top_percent} percent activations to ablate")
 
     if VIS:
         for idxs, values, tensor in zip(top_idxs, top_values, activations):
@@ -458,7 +462,7 @@ if __name__ == "__main__":
             visualize_top_activations(idxs, values, tensor)
 
     (ablated_task, regular_task), (ablated_control, regular_control) = task_ablated(
-        task.sample(100), resnet_forward, resnet_blocks, top_idxs
+        task.sample(500), resnet_forward, resnet_blocks, top_idxs
     )
     print("*Computed Ablated Model versus Regular")
 
