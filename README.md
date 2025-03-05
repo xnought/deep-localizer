@@ -28,8 +28,10 @@ Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Ca
 		- [x] write code to ablate torch models easily 
 		- [x] ablate given the top percent face activations
 		- [x] Compare performance after ablation
-- [ ] Write report on the resnet example and if localization seems to work and what evidence
 - [ ] Write general API from most helpful functions so others can easily use the library 
+	- [ ] Activation computation
+	- [ ] Analysis computation
+- [ ] Write report on the resnet example and if localization seems to work and what evidence
 
 
 ## References
