@@ -403,6 +403,7 @@ if __name__ == "__main__":
     CACHED_ACTIVATIONS = "resnet_face.safetensors"
     activations = None
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+    VIS = False
 
     from transformers import AutoImageProcessor, ResNetForImageClassification
 
@@ -443,26 +444,20 @@ if __name__ == "__main__":
         activations = load_activations_from_disk(CACHED_ACTIVATIONS, DEVICE)
         print(f"*Loaded Activations from {CACHED_ACTIVATIONS}")
 
-    # visualize_activations(activations, (4, 4))
-    # visualize_activations(overall_activation(activations), (4, 4), cmap="inferno")
+    if VIS:
+        visualize_activations(activations, (4, 4))
+        visualize_activations(overall_activation(activations), (4, 4), cmap="inferno")
 
     top_idxs, top_values = top_percent_global(activations, 1)
-    # for idxs, values, tensor in zip(top_idxs, top_values, activations):
-    #     if len(idxs) == 0:
-    #         continue
-    #     visualize_top_activations(idxs, values, tensor)
+    print("*Computed top 1 percent activations to ablate")
 
-    # results = ablated_inference(
-    #     task=task.iloc[:50],
-    #     model_forward=resnet_forward,
-    #     layers_activations=resnet_blocks,
-    #     to_ablate=top_idxs,
-    #     batch_size=32,
-    #     ablate_factor=0,
-    # )
+    if VIS:
+        for idxs, values, tensor in zip(top_idxs, top_values, activations):
+            if len(idxs) == 0:
+                continue
+            visualize_top_activations(idxs, values, tensor)
 
     (ablated_task, regular_task), (ablated_control, regular_control) = task_ablated(
         task.sample(100), resnet_forward, resnet_blocks, top_idxs
     )
-    print(ablated_task.shape, regular_task.shape)
-    print(ablated_control.shape, regular_control.shape)
+    print("*Computed Ablated Model versus Regular")
