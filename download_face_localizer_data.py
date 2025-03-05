@@ -3,7 +3,9 @@ import asyncio
 import os
 import requests
 from datasets import load_dataset
-from tqdm.notebook import tqdm
+import numpy as np
+
+np.random.seed(0)
 
 
 def background(f):
@@ -19,6 +21,7 @@ def download_image(url, name):
     if response.status_code == 200:
         with open(name, "wb") as f:
             f.write(response.content)
+        print(f"Saved {name}")
 
 
 async def download_coco_subset():
@@ -39,16 +42,17 @@ async def download_coco_subset():
     return neg_df
 
 
-async def download_celeba_subset():
+def download_celeba_subset():
     ds = load_dataset("tpremoli/CelebA-attrs", split="test", streaming=True)
 
     i = 0
     names = []
     if not os.path.exists("./data/celeba"):
         os.mkdir("./data/celeba")
-    for d in tqdm(ds.take(5_000), total=5_000):
+    for d in ds.take(5_000):
         n = f"celeba/{i}.jpg"
         d["image"].save("./data/" + n)
+        print(f"Saved {'./data/' + n}")
         names.append(n)
         i += 1
 
@@ -56,12 +60,28 @@ async def download_celeba_subset():
     return pos_df
 
 
+def sample(df, n):
+    return df.loc[np.random.choice(df.index.values, n, replace=False)]
+
+
 async def main():
+    if not os.path.exists("./data"):
+        os.mkdir("data")
+
+    celeba_df = download_celeba_subset()
     coco_df = await download_coco_subset()
-    celeba_df = await download_celeba_subset()
-    df = pd.concat((celeba_df, coco_df))
-    df.to_parquet("./data/tasks/face_task.parquet", index=False)
+
+    N = 3_000
+    task_df = sample(celeba_df, N)
+    control_df = sample(coco_df, N)
+
+    # Label 1k with validation, and rest as regular
+    task_df["validation"] = [i < 1_000 for i in range(N)]
+    control_df["validation"] = [i < 1_000 for i in range(N)]
+
+    df = pd.concat((task_df, control_df))
+    df.to_parquet("./data/task_face_localizer.parquet", index=False)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
