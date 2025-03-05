@@ -461,3 +461,21 @@ if __name__ == "__main__":
         task.sample(100), resnet_forward, resnet_blocks, top_idxs
     )
     print("*Computed Ablated Model versus Regular")
+
+    regular_task_preds = regular_task.argmax(-1)
+    ablated_task_preds = ablated_task.argmax(-1)
+    shared_prediction = (regular_task_preds == ablated_task_preds).sum() / len(
+        regular_task_preds
+    )
+    print(
+        f"How did the predictions for the face images change after ablation? Answer: {((1 - shared_prediction) * 100).item()}%"
+    )
+
+    regular_control_preds = regular_control.argmax(-1)
+    ablated_control_preds = ablated_control.argmax(-1)
+    shared_prediction = (regular_control_preds == ablated_control_preds).sum() / len(
+        regular_control_preds
+    )
+    print(
+        f"How many changed for the control? Answer: {((1 - shared_prediction) * 100).item()}%"
+    )
