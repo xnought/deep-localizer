@@ -6,13 +6,6 @@ Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Ca
 
 [Face Localizer Resnet Report](https://www.donnybertucci.com/project/deeplocalizer) (IN PROGRESS) 
 
-> [!NOTE]
-> Currently working on the first example (resnet face localizer) in the /experiments folder
->
-> Once this is done, I'll write a report + write the library
->
-> Update: got the first example running of CelebA(Faces) vs Objects(Coco). When I ablate the top 0.125% activations per layer, I get the same predictions only ~10% of the time for faces while I get > 90% of the time the same prediction for objects. When I do global activation ablations I can reduce the face predictions to change 100% of the time, and 40% of the time for other inputs. Weird.
-
 **Roadmap**
 
 - [x] Replicate some parts of original paper (https://github.com/xnought/paper-implement/tree/main/language_network)
@@ -28,13 +21,13 @@ Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Ca
 		- [x] write code to ablate torch models easily 
 		- [x] ablate given the top percent face activations
 		- [x] Compare performance after ablation
-- [ ] Write general API from most helpful functions so others can easily use the library 
+- [x] Write general API from most helpful functions so others can easily use the library 
 	- [x] Activation computation
-	- [ ] Analysis computation
+	- [x] Analysis computation
 		- [x] Top percent global
 		- [x] Visualizations
-		- [ ] Ablate model with the top percent
-		- [ ] Compute statistics on ablated model
+		- [x] Ablate model with the top percent
+		- [x] Compute statistics on ablated model
 - [ ] Write report on the resnet example and if localization seems to work and what evidence
 
 
@@ -48,4 +41,3 @@ Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Ca
 - https://huggingface.co/datasets/tpremoli/CelebA-attrs
 - https://huggingface.co/datasets/phiyodr/coco2017
 - https://huggingface.co/microsoft/resnet-50
-- https://stackoverflow.com/questions/9786102/how-do-i-parallelize-a-simple-python-loop
