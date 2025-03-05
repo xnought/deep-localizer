@@ -150,52 +150,171 @@ def save_activations_to_disk(activations: list[torch.Tensor], filename: str):
     save_file(export, filename)
 
 
-def load_activations_from_disk(filename: str) -> list[torch.Tensor]:
+def load_activations_from_disk(filename: str, device="cpu") -> list[torch.Tensor]:
     from safetensors.torch import safe_open
     import os
 
     assert os.path.exists(filename), "File must exist!"
 
     tensors = {}
-    with safe_open(filename, framework="pt") as f:
+    with safe_open(filename, framework="pt", device=device) as f:
         for k in f.keys():
             tensors[k] = f.get_tensor(k)
 
     return [tensors[layer_name(i)] for i in range(len(tensors))]
 
 
+def map_flat(tensor_dict):
+    return torch.hstack([tensor_dict[l].flatten() for l in tensor_dict])
+
+
+def prod(l):
+    p = 1
+    for i in l:
+        p *= i
+    return p
+
+
+def squarify(t):
+    d = int(prod(t.shape) ** (0.5))
+    return t.flatten()[: d * d].reshape((d, d))
+
+
+def visualize_activations(activations: list[torch.Tensor], grid=None, cmap="viridis"):
+    import matplotlib.pyplot as plt
+
+    plt.style.use("dark_background")
+
+    if grid is None:
+        # first combine all the layers so can do argpartition
+        for i, a in enumerate(activations):
+            plt.title(f"i={i}")
+            plt.imshow(squarify(a), cmap=cmap)
+            plt.colorbar()
+            plt.show()
+    else:
+        fig, axes = plt.subplots(*grid, figsize=(16, 9))
+        for i, ax in enumerate(axes.flat):
+            a = activations[i]
+            im = ax.imshow(squarify(a), cmap=cmap)
+            ax.set_title(f"i={i}")
+            plt.colorbar(im, ax=ax)
+            ax.axis("off")
+        plt.show()
+
+
+def _map(func, arr):
+    return list(map(func, arr))
+
+
+def overall_activation(activations: list[torch.Tensor]):
+    return _map(lambda t: t.abs(), activations)
+
+
+def append_array_at_key(_dict, k, v):
+    if k in _dict:
+        _dict[k].append(v)
+    else:
+        _dict[k] = [v]
+
+
+def flat_idx_to_layer_idx(flat_idx, edges):
+    for i in range(len(edges) - 1):
+        start = edges[i]
+        end = edges[i + 1]
+        if flat_idx >= start and flat_idx < end:
+            return i, flat_idx - start
+    raise Exception("Didn't find any index")
+
+
+def flat_idx_to_layer_idx_fast(flat_idxs, edges):
+    layer_idxs = torch.searchsorted(edges, flat_idxs, right=True) - 1
+    layer_flat_idxs = flat_idxs - edges[layer_idxs]
+    return torch.stack((layer_idxs, layer_flat_idxs), dim=1)
+
+
+def format_topk_global_return(tensors, layers_idxs):
+    result_idxs = {}
+    result_values = {}
+    for layer_idx, layer_flat_idx in layers_idxs:
+        t = tensors[layer_idx]
+        append_array_at_key(result_idxs, layer_idx.item(), layer_flat_idx.item())
+        append_array_at_key(
+            result_values, layer_idx.item(), t.view(-1)[layer_flat_idx].item()
+        )
+
+    return result_idxs, result_values
+
+
+def topk_global(tensors: list[torch.Tensor], k):
+    # flatten all the tensors, find the topk, then map those flat idxs back to the layers indices
+    flat_concat = torch.hstack([t.flatten() for t in tensors])
+    global_values, global_idxs = flat_concat.topk(k)
+
+    edges = torch.tensor([0] + [prod(t.shape) for t in tensors]).cumsum(0)
+    layers_idxs = flat_idx_to_layer_idx_fast(global_idxs, edges)
+    return format_topk_global_return(tensors, layers_idxs)
+
+
+def top_percent_global(tensors: list[torch.Tensor], percent=1):
+    total_length = sum(prod(t.shape) for t in tensors)
+    k = int((percent / 100) * total_length)
+    return topk_global(tensors, k)
+
+
+def visualize_top_activations(top_idxs, top_values, activation):
+    import matplotlib.pyplot as plt
+
+    plt.style.use("dark_background")
+
+    canvas = torch.zeros(activation.shape)
+    act = torch.tensor(top_values)
+    idxs = torch.tensor(top_idxs)
+
+    canvas.view(-1)[idxs] = act
+
+    fig, axes = plt.subplots(1, 2, figsize=(16, 9))
+    axes[0].set_title("Original")
+    axes[0].imshow(squarify(activation), cmap="inferno")
+
+    axes[1].set_title("Top P Percent")
+    axes[1].imshow(squarify(canvas), cmap="inferno")
+    plt.show()
+
+
 if __name__ == "__main__":
-    from transformers import AutoImageProcessor, ResNetForImageClassification
     from PIL import Image
     import os
 
-    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    processor = AutoImageProcessor.from_pretrained("microsoft/resnet-34")
-    model = ResNetForImageClassification.from_pretrained("microsoft/resnet-34")
-    model = model.to(DEVICE)
-    print("*Loaded Resnet34 from Huggingface")
-
-    task = pd.read_parquet("./experiments/data/tasks/face_task2k.parquet")
-    print("*Loaded Face Localizer Task")
-
-    # DEFINE HOW THE MODEL COMPUTES ACTIVATIONS
-    @torch.no_grad()
-    def resnet_forward(task_batch: pd.DataFrame):
-        image_paths = task_batch["data"]
-        images = [
-            Image.open(f"./experiments/data/{p}").convert("RGB") for p in image_paths
-        ]
-        inputs = processor(images, return_tensors="pt").to(DEVICE)
-        return model(**inputs)
-
-    resnet_blocks = [
-        layer for stage in model.resnet.encoder.stages for layer in stage.layers
-    ]
-
     CACHED_ACTIVATIONS = "resnet_face.safetensors"
     activations = None
+    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
     if not os.path.exists(CACHED_ACTIVATIONS):
+        from transformers import AutoImageProcessor, ResNetForImageClassification
+
+        processor = AutoImageProcessor.from_pretrained("microsoft/resnet-34")
+        model = ResNetForImageClassification.from_pretrained("microsoft/resnet-34")
+        model = model.to(DEVICE)
+        print("*Loaded Resnet34 from Huggingface")
+
+        task = pd.read_parquet("./experiments/data/tasks/face_task2k.parquet")
+        print("*Loaded Face Localizer Task")
+
+        # DEFINE HOW THE MODEL COMPUTES ACTIVATIONS
+        @torch.no_grad()
+        def resnet_forward(task_batch: pd.DataFrame):
+            image_paths = task_batch["data"]
+            images = [
+                Image.open(f"./experiments/data/{p}").convert("RGB")
+                for p in image_paths
+            ]
+            inputs = processor(images, return_tensors="pt").to(DEVICE)
+            return model(**inputs)
+
+        resnet_blocks = [
+            layer for stage in model.resnet.encoder.stages for layer in stage.layers
+        ]
         activations = compute_task_activations(
             df=task,
             model_forward=resnet_forward,
@@ -207,7 +326,12 @@ if __name__ == "__main__":
         save_activations_to_disk(activations, CACHED_ACTIVATIONS)
         print("*Saved Activations to Disk")
     else:
-        activations = load_activations_from_disk(CACHED_ACTIVATIONS)
+        activations = load_activations_from_disk(CACHED_ACTIVATIONS, DEVICE)
         print(f"*Loaded Activations from {CACHED_ACTIVATIONS}")
 
-    print(activations)
+    # visualize_activations(activations, (4, 4))
+    # visualize_activations(overall_activation(activations), (4, 4), cmap="inferno")
+
+    top_idxs, top_values = top_percent_global(activations, 0.25)
+    for n in top_idxs:
+        visualize_top_activations(top_idxs[n], top_values[n], activations[n])

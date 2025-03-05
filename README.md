@@ -31,6 +31,10 @@ Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Ca
 - [ ] Write general API from most helpful functions so others can easily use the library 
 	- [x] Activation computation
 	- [ ] Analysis computation
+		- [x] Top percent global
+		- [x] Visualizations
+		- [ ] Ablate model with the top percent
+		- [ ] Compute statistics on ablated model
 - [ ] Write report on the resnet example and if localization seems to work and what evidence
 
 
