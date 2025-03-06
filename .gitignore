@@ -1,3 +1,5 @@
 .DS_Store
 __pycache__/
 *.safetensors
+deeplocalizer.egg-info/
+dist/

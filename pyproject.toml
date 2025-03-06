@@ -23,3 +23,7 @@ dev = [
     "requests>=2.32.3",
     "transformers>=4.49.0",
 ]
+
+[tool.setuptools]
+packages = ["deeplocalizer"]
+license-files = []
