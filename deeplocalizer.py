@@ -477,9 +477,7 @@ if __name__ == "__main__":
     # DEFINE HOW THE MODEL COMPUTES ACTIVATIONS
     @torch.no_grad()
     def resnet_forward(image_paths):
-        images = [
-            Image.open(f"./experiments/data/{p}").convert("RGB") for p in image_paths
-        ]
+        images = [Image.open(f"./data/{p}").convert("RGB") for p in image_paths]
         inputs = processor(images, return_tensors="pt").to(DEVICE)
         outputs = model(**inputs)
         return outputs.logits
