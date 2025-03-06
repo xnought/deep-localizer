@@ -1,14 +1,14 @@
 import torch
 import pandas as pd
 from tqdm import tqdm
-from typing import Callable, Any, NewType
+from typing import Callable, Any
 import os
 import matplotlib.pyplot as plt
 
 plt.style.use("dark_background")
 
 SaveActivationsFunc = Callable[[torch.Tensor], torch.Tensor]
-ModelForwardFunc = Callable[[pd.DataFrame], Any]
+ModelForwardFunc = Callable[[list[Any]], Any]
 AblateIdxs = torch.Tensor | list[int]
 AblateActivationsFunc = Callable[[torch.Tensor, AblateIdxs, float], torch.Tensor]
 
