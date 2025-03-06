@@ -64,7 +64,7 @@ Make sure to have https://docs.astral.sh/uv/ installed.
 
 ```bash
 uv sync
-uv run deeplocalizer.py
+uv run deeplocalizer/deeplocalizer.py
 ```
 
 or run an example python notebook within the .env generated.
