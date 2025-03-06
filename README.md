@@ -33,6 +33,13 @@ Examples:
 		- [x] Compute statistics on ablated model
 - [x] Write report on the resnet example and if localization seems to work and what evidence
 
+## Usage
+
+TODO: package on PyPi.
+
+In the mean time:
+
+See [`resnet34_example.ipynb`](./resnet34_example.ipynb) for doing localization on a torch model with a custom dataset/task. You just need to grab the [`deeplocalizer.py`](./deeplocalizer.py) file and the data you want to use. (install requirements in requirements.txt)
 
 ## References
 
