@@ -1,20 +1,33 @@
 import torch
 import pandas as pd
 from tqdm import tqdm
-from typing import Callable, Any
+from typing import Callable, Any, NewType
 import os
 import matplotlib.pyplot as plt
 
 plt.style.use("dark_background")
 
+SaveActivationsFunc = Callable[[torch.Tensor], torch.Tensor]
+ModelForwardFunc = Callable[[pd.DataFrame], Any]
+AblateIdxs = torch.Tensor | list[int]
+AblateActivationsFunc = Callable[[torch.Tensor, AblateIdxs, float], torch.Tensor]
+
+
+def default_save_activations(acts):
+    return acts
+
 
 class ActivationTracker:
-    def __init__(self, layers):
+    def __init__(
+        self,
+        layers: list[torch.nn.Module],
+        save_activations: SaveActivationsFunc = default_save_activations,
+    ):
         self.activations = {}
         self.layers = layers
         self.hooks = []
         for l in layers:
-            self.hooks.append(self.register_hook(l))
+            self.hooks.append(self.register_hook(l, save_activations))
 
     @property
     def list_activations(self):
@@ -26,9 +39,13 @@ class ActivationTracker:
         self.hooks = []
         self.activations = []
 
-    def register_hook(self, layer):
+    def register_hook(
+        self,
+        layer: torch.nn.Module,
+        save_activations: SaveActivationsFunc = default_save_activations,
+    ):
         def hook(module, inputs, outputs):
-            self.activations[layer] = outputs.detach().cpu()
+            self.activations[layer] = save_activations(outputs).detach()
             return outputs
 
         return layer.register_forward_hook(hook)
@@ -61,12 +78,13 @@ class ActivationTracker:
 
 def accumulate_activations_naive(
     task: pd.DataFrame,
-    model_forward: Callable[[pd.DataFrame], Any],
+    model_forward: ModelForwardFunc,
     layers_activations: list[torch.nn.Module],
     batch_size=32,
+    save_activations: SaveActivationsFunc = default_save_activations,
 ) -> list[torch.Tensor]:
     act_col = []
-    with ActivationTracker(layers=layers_activations) as tracker:
+    with ActivationTracker(layers_activations, save_activations) as tracker:
         for i in tqdm(range(0, len(task), batch_size)):
             batch = task.iloc[i : i + batch_size]
             model_forward(batch)
@@ -96,9 +114,10 @@ def mean_accumulate_tensors(
 
 def accumulate_activations(
     data: list[Any],
-    model_forward: Callable[[list[Any]], Any],
+    model_forward: ModelForwardFunc,
     layers_activations: list[torch.nn.Module],
     batch_size=32,
+    save_activations: SaveActivationsFunc = default_save_activations,
 ) -> list[torch.Tensor]:
     N = len(data)
     assert N > 0, "Must have data!"
@@ -106,7 +125,7 @@ def accumulate_activations(
     assert batch_size > 0, "batch size must be greater than 0"
 
     accumulate = [None] * len(layers_activations)  # we will be accumulating the tensors
-    with ActivationTracker(layers=layers_activations) as tracker:
+    with ActivationTracker(layers_activations, save_activations) as tracker:
         for i in tqdm(range(0, N, batch_size)):
             batch = data[i : i + batch_size]
             model_forward(batch)
@@ -119,9 +138,10 @@ def accumulate_activations(
 
 def compute_task_activations(
     df: pd.DataFrame,
-    model_forward: Callable[[list[Any]], Any],
+    model_forward: ModelForwardFunc,
     layers_activations: list[torch.nn.Module],
     batch_size=32,
+    save_activations: SaveActivationsFunc = default_save_activations,
 ):
     assert "data" in df.columns, "Must have a column named data"
     assert "positive" in df.columns, (
@@ -132,10 +152,10 @@ def compute_task_activations(
     control = df[df["positive"] == False]
 
     task_acts = accumulate_activations(
-        task["data"], model_forward, layers_activations, batch_size
+        task["data"], model_forward, layers_activations, batch_size, save_activations
     )
     control_acts = accumulate_activations(
-        control["data"], model_forward, layers_activations, batch_size
+        control["data"], model_forward, layers_activations, batch_size, save_activations
     )
 
     # subtract out the control from the task
@@ -234,7 +254,7 @@ def flat_idx_to_layer_idx_fast(flat_idxs, edges):
     return torch.stack((layer_idxs, layer_flat_idxs), dim=1)
 
 
-def format_topk_global_return(tensors, layers_idxs):
+def format_topk_global_return(tensors: list[torch.Tensor], layers_idxs: torch.Tensor):
     result_idxs = [[] for _ in range(len(tensors))]
     result_values = [[] for _ in range(len(tensors))]
     for layer_idx, layer_flat_idx in layers_idxs:
@@ -244,7 +264,7 @@ def format_topk_global_return(tensors, layers_idxs):
     return result_idxs, result_values
 
 
-def topk_global(tensors: list[torch.Tensor], k):
+def topk_global(tensors: list[torch.Tensor], k: int):
     # flatten all the tensors, find the topk, then map those flat idxs back to the layers indices
     flat_concat = torch.hstack([t.flatten() for t in tensors])
     global_values, global_idxs = flat_concat.topk(k)
@@ -328,26 +348,46 @@ def visualize_top_per_layer(
     plt.show()
 
 
+def default_flat_idxs_ablate(
+    activations: torch.Tensor, ablate: AblateIdxs, scalar: float
+):
+    B = activations.shape[0]
+    flat = activations.view(B, -1)
+    flat[:, ablate] *= scalar
+    return activations
+
+
 class AblateTorchModel:
-    def __init__(self, layers, ablate, scaler=0):
+    def __init__(
+        self,
+        layers: list[torch.nn.Module],
+        to_ablate: list[AblateIdxs],
+        scalar=0,
+        ablate_activations: AblateActivationsFunc = default_flat_idxs_ablate,
+    ):
         self.layers = layers
-        self.ablate = ablate
+        self.to_ablate = to_ablate
         self.hooks = []
-        for l, a in zip(layers, ablate):
-            self.hooks.append(self.register_hook(l, a, scaler))
+        for layer, ablate in zip(layers, to_ablate):
+            if len(ablate) > 0:
+                self.hooks.append(
+                    self.register_hook(layer, ablate, scalar, ablate_activations)
+                )
 
     def remove_hooks(self):
         for h in self.hooks:
             h.remove()
         self.hooks = []
 
-    def register_hook(self, layer, ablate, scaler):
+    def register_hook(
+        self,
+        layer: torch.nn.Module,
+        ablate: AblateIdxs,
+        scalar: float,
+        ablate_activations: AblateActivationsFunc,
+    ):
         def hook(module, inputs, outputs):
-            if len(ablate) > 0:
-                B = outputs.shape[0]
-                flat = outputs.view(B, -1)
-                flat[:, ablate] *= scaler
-            return outputs
+            return ablate_activations(outputs, ablate, scalar)
 
         return layer.register_forward_hook(hook)
 
@@ -374,7 +414,7 @@ def combine_batches(model_results: list[torch.Tensor] | list[tuple]):
 
 def regular_inference(
     data: list[Any],
-    model_forward: Callable[[list[Any]], Any],
+    model_forward: ModelForwardFunc,
     batch_size=32,
 ):
     N = len(data)
@@ -388,23 +428,27 @@ def regular_inference(
 
 def ablated_inference(
     data: list[Any],
-    model_forward: Callable[[list[Any]], Any],
+    model_forward: ModelForwardFunc,
     layers_activations: list[torch.nn.Module],
-    to_ablate: list[list[int]],
+    to_ablate: list[AblateIdxs],
     batch_size=32,
     ablate_factor=0,
+    ablate_activations: AblateActivationsFunc = default_flat_idxs_ablate,
 ) -> torch.Tensor | tuple:
-    with AblateTorchModel(layers_activations, to_ablate, ablate_factor):
+    with AblateTorchModel(
+        layers_activations, to_ablate, ablate_factor, ablate_activations
+    ):
         return regular_inference(data, model_forward, batch_size)
 
 
 def task_ablated(
     df: pd.DataFrame,
-    model_forward: Callable[[pd.DataFrame], Any],
+    model_forward: ModelForwardFunc,
     layers_activations: list[torch.nn.Module],
-    to_ablate: dict[int, list[int]],
+    to_ablate: list[AblateIdxs],
     batch_size=32,
     ablate_factor=0,
+    ablate_activations: AblateActivationsFunc = default_flat_idxs_ablate,
 ):
     assert "data" in df.columns, "Must have a column named data"
     assert "positive" in df.columns, (
@@ -419,6 +463,7 @@ def task_ablated(
         to_ablate,
         batch_size,
         ablate_factor,
+        ablate_activations,
     )
     regular_task = regular_inference(
         task["data"],
@@ -434,6 +479,7 @@ def task_ablated(
         to_ablate,
         batch_size,
         ablate_factor,
+        ablate_activations,
     )
     regular_control = regular_inference(
         control["data"],
@@ -472,7 +518,9 @@ if __name__ == "__main__":
     print("*Loaded Resnet34 from Huggingface")
 
     task, valid = load_task("./data/task_face_localizer.parquet")
-    print("*Loaded Face Localizer Task")
+    task = task.sample(100)
+    valid = valid.sample(100)
+    print("*Loaded Face Localizer Task (Sampling 100 points)")
 
     # DEFINE HOW THE MODEL COMPUTES ACTIVATIONS
     @torch.no_grad()
@@ -505,10 +553,10 @@ if __name__ == "__main__":
     top_idxs, top_values = top_percent_global(activations, top_percent)
     print(f"*Computed top {top_percent} percent activations to ablate")
 
-    # if VIS:
-    visualize_activations(overall_activation(activations), (4, 4), cmap="inferno")
-    visualize_top_activations(top_idxs, top_values, activations, (4, 4))
-    visualize_top_per_layer(top_idxs, activations)
+    if VIS:
+        visualize_activations(overall_activation(activations), (4, 4), cmap="inferno")
+        visualize_top_activations(top_idxs, top_values, activations, (4, 4))
+        visualize_top_per_layer(top_idxs, activations)
 
     # See the performance on the validation set, not what we observed to see if it works!
     (ablated_task, regular_task), (ablated_control, regular_control) = task_ablated(
