@@ -32,7 +32,7 @@ Examples:
 		- [x] Visualizations
 		- [x] Ablate model with the top percent
 		- [x] Compute statistics on ablated model
-- [x] Write report on the resnet example and if localization seems to work and what evidence
+- [x] Write report on the resnet example and if localization seems to work and what evidence (here -> https://www.donnybertucci.com/project/deeplocalizer)
 
 
 ## Usage
