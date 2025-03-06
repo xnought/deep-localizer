@@ -33,15 +33,43 @@ Examples:
 		- [x] Compute statistics on ablated model
 - [x] Write report on the resnet example and if localization seems to work and what evidence
 
+
 ## Usage
 
-TODO: package on PyPi.
+**API**
 
-In the mean time:
+See [`resnet34_example.ipynb`](./resnet34_example.ipynb) for doing localization on a torch model with a custom dataset/task. 
 
-See [`resnet34_example.ipynb`](./resnet34_example.ipynb) for doing localization on a torch model with a custom dataset/task. You just need to grab the [`deeplocalizer.py`](./deeplocalizer.py) file and the data you want to use. (install requirements in requirements.txt)
 
-If you want to run all the experiments/ or data download scripts you'll need the packages from requirements.dev.txt (which is a few more packages).
+(COMING SOON NO PACKAGE YET)
+
+**Install**
+```bash
+pip install deeplocalizer
+```
+
+or I'd recommend using uv in your project with
+
+```bash
+uv add deeplocalizer
+```
+
+## Development
+
+```bash
+cd deeplocalizer # this git repo
+```
+
+Make sure to have https://docs.astral.sh/uv/ installed.
+
+**Install and Run**
+
+```bash
+uv sync
+uv run deeplocalizer.py
+```
+
+or run an example python notebook within the .env generated.
 
 ## References
 

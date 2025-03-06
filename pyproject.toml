@@ -1,7 +1,7 @@
 [project]
-name = "deep-localizer"
-version = "0.1.0"
-description = "Add your description here"
+name = "deeplocalizer"
+version = "0.0.0"
+description = "Package to localize torch deep learning models"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -19,6 +19,7 @@ dependencies = [
 dev = [
     "asyncio>=3.4.3",
     "datasets>=3.3.2",
+    "ipykernel>=6.29.5",
     "requests>=2.32.3",
     "transformers>=4.49.0",
 ]
