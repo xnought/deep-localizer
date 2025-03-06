@@ -1,0 +1,10 @@
+torch
+numpy
+pandas
+pyarrow
+matplotlib
+seaborn
+safetensors
+transformers
+datasets
+requests
