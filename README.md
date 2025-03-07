@@ -33,21 +33,24 @@ Again see [`face_data_viewer.ipynb`](./face_data_viewer.ipynb) if you're still c
 
 ## Library Usage
 
-**API**
-
-See [`resnet34_example.ipynb`](./resnet34_example.ipynb) for doing localization on a torch model with a custom dataset/task. 
-
+**Install**
 
 ```bash
 uv add deeplocalizer
 ```
 
-Or if you are old school
+or
 
-**Install**
 ```bash
 pip install deeplocalizer
 ```
+
+**API Usage**
+
+See [`resnet34_example.ipynb`](./resnet34_example.ipynb) for doing localization on a torch model with a custom dataset/task. 
+
+TODO: better documentation.
+
 
 ## Development
 
