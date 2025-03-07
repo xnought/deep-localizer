@@ -9,33 +9,9 @@ Examples:
 
 - [Face Localizer Resnet Report](https://www.donnybertucci.com/project/deeplocalizer)
 - [Face Localizer Resnet Notebook](./resnet34_example.ipynb)
-
-**Roadmap**
-
-- [x] Replicate some parts of original paper (https://github.com/xnought/paper-implement/tree/main/language_network)
-- [x] Write code from scratch to do analysis on face with resnet
-	- [x] Set up face localizer example w/ goal of applying to a resnet model
-		- [x] 5k positive (faces) from CelebA
-		- [x] 5k negative (objects) from COCO
-	- [x] Extract activations from the resnet model
-		- [x] test track the activations
-		- [x] store activations on disk
-	- [x] Contrast positive vs negative activations
-	- [x] Ablation w/ statistical tests on resnet
-		- [x] write code to ablate torch models easily 
-		- [x] ablate given the top percent face activations
-		- [x] Compare performance after ablation
-- [x] Write general API from most helpful functions so others can easily use the library 
-	- [x] Activation computation
-	- [x] Analysis computation
-		- [x] Top percent global
-		- [x] Visualizations
-		- [x] Ablate model with the top percent
-		- [x] Compute statistics on ablated model
-- [x] Write report on the resnet example and if localization seems to work and what evidence (here -> https://www.donnybertucci.com/project/deeplocalizer)
+- [Face Localizer Data Viewer](./face_data_viewer.ipynb)
 
 ## Task Usage
-
 
 Tasks are just pandas dataframes with a `data`, `positive`, and `validation` columns. Each row is a different data point.
 
