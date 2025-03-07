@@ -34,8 +34,23 @@ Examples:
 		- [x] Compute statistics on ablated model
 - [x] Write report on the resnet example and if localization seems to work and what evidence (here -> https://www.donnybertucci.com/project/deeplocalizer)
 
+## Task Usage
 
-## Usage
+
+Tasks are just pandas dataframes with a `data`, `positive`, and `validation` columns. Each row is a different data point.
+
+See [`face_data_viewer.ipynb`](./face_data_viewer.ipynb) to see a real example of a face localizer data (face images from CelebA vs. objects images from COCO).
+
+
+**What do the columns mean?**
+
+- `data` is the data itself (eg text) or points to data (eg image filename)
+- `positive` is `True` for the task and `False` for the control (eg face images have `True` and control images have `False`)
+- `validation` is technically optional. If you want to notate some rows to only be used later on to test performance and not for the main localization, you can indicate a subset of the rows as `True`. The main dataset used for localization is then `False`.
+
+Again see [`face_data_viewer.ipynb`](./face_data_viewer.ipynb) if you're still confused.
+
+## Library Usage
 
 **API**
 
