@@ -264,19 +264,28 @@ def format_topk_global_return(tensors: list[torch.Tensor], layers_idxs: torch.Te
     return result_idxs, result_values
 
 
+def global_to_layers(tensors, global_idxs):
+    edges = torch.tensor([0] + [prod(t.shape) for t in tensors]).cumsum(0)
+    layers_idxs = flat_idx_to_layer_idx_fast(global_idxs, edges)
+    return layers_idxs
+
+
 def topk_global(tensors: list[torch.Tensor], k: int):
     # flatten all the tensors, find the topk, then map those flat idxs back to the layers indices
     flat_concat = torch.hstack([t.flatten() for t in tensors])
     global_values, global_idxs = flat_concat.topk(k)
-
-    edges = torch.tensor([0] + [prod(t.shape) for t in tensors]).cumsum(0)
-    layers_idxs = flat_idx_to_layer_idx_fast(global_idxs, edges)
+    layers_idxs = global_to_layers(tensors, global_idxs)
     return format_topk_global_return(tensors, layers_idxs)
 
 
-def top_percent_global(tensors: list[torch.Tensor], percent=1):
+def percent_to_k(tensors, percent):
     total_length = sum(prod(t.shape) for t in tensors)
     k = int((percent / 100) * total_length)
+    return k
+
+
+def top_percent_global(tensors: list[torch.Tensor], percent=1):
+    k = percent_to_k(tensors, percent)
     return topk_global(tensors, k)
 
 
@@ -521,7 +530,6 @@ class DeepLocalizer:
 
     def load_activations(self, filename, device="cpu"):
         self.activations = load_activations_from_disk(filename, device)
-        print(f"[DeepLocalizer] Loaded Activations from '{filename}'")
         return self
 
     def compute_activations(self):
@@ -542,7 +550,6 @@ class DeepLocalizer:
     def save_activations(self, filename):
         self.assert_activations()
         save_activations_to_disk(self.activations, filename)
-        print(f"[DeepLocalizer] Saved activations to '{filename}'")
 
     @torch.no_grad()
     def regular_model_forward(self, df: pd.DataFrame = None):
@@ -567,11 +574,7 @@ class DeepLocalizer:
 
     def top_percent_activations(self, top_percent: float, transform=lambda x: x.abs()):
         self.assert_activations()
-
-        top_idxs, top_values = top_percent_global(
-            _map(transform, self.activations), top_percent
-        )
-        return top_idxs, top_values
+        return top_percent_global(_map(transform, self.activations), top_percent)
 
     @torch.no_grad()
     def ablate_model_forward(
@@ -585,7 +588,6 @@ class DeepLocalizer:
             df = self.task
 
         print("[DeepLocalizer] Computing Model Forward ABLATED")
-
         with AblateTorchModel(
             layers=self.layers_activations,
             to_ablate=ablate_activations,
@@ -644,21 +646,22 @@ if __name__ == "__main__":
         d.compute_activations()
         d.save_activations(CACHED_ACTIVATIONS)
 
-    # top_indices, top_values = d.top_percent_activations(0.3, lambda x: x.abs())
-    # a = [a.abs() for a in d.activations]
-    # visualize_top_per_layer(top_indices, a)
-    # visualize_activations(a, (4, 4), cmap="inferno")
-    # visualize_top_activations(top_indices, top_values, a, (4, 4))
-
     ps = [1, 0.5, 0.25, 0.125, 0.0625]
     perf_task = []
     perf_control = []
 
+    regular_task, regular_control = d.regular_model_forward(valid)
+
     for p in ps:
         print(p)
-        top_indices, top_values = d.top_percent_activations(p, lambda x: x.abs())
+        top_indices, top_values = d.top_percent_activations(p)
 
-        regular_task, regular_control = d.regular_model_forward(valid)
+        if VIS:
+            a = [a.abs() for a in d.activations]
+            visualize_top_per_layer(top_indices, a)
+            visualize_activations(a, (4, 4), cmap="inferno")
+            visualize_top_activations(top_indices, top_values, a, (4, 4))
+
         ablated_task, ablated_control = d.ablate_model_forward(
             df=valid, ablate_activations=top_indices
         )
