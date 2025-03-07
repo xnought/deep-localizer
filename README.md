@@ -1,9 +1,14 @@
+# DeepLocalizer
 
-[![PyPI - Version](https://img.shields.io/pypi/v/deeplocalizer.svg)](https://pypi.org/project/deeplocalizer)
-<img src="https://github.com/user-attachments/assets/b00dc021-8e31-44be-9a69-ba33ed8054c6" width="800px">
-**DeepLocalizer**: Quickly find functional specialization in deep neural networks. 
+[![PyPI - Version](https://img.shields.io/pypi/v/deeplocalizer.svg)](https://pypi.org/project/deeplocalizer) 
 
-Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Causally Task-Relevant Units](https://arxiv.org/abs/2411.02280) and [Brain-like functional specialization emerges spontaneously in deep neural networks](https://web.mit.edu/bcs/nklab/media/pdfs/Dobs_2022.pdf) to other models and data.
+[Blog Post](https://www.donnybertucci.com/project/deeplocalizer#blog)
+
+
+**Quickly find functional specialization in PyTorch models.**
+
+Extends [The LLM Language Network: A Neuroscientific Approach for Identifying Causally Task-Relevant Units](https://arxiv.org/abs/2411.02280) to other models and data.
+
 
 Examples:
 
