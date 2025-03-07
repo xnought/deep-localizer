@@ -607,7 +607,7 @@ if __name__ == "__main__":
 
     np.random.seed(0)  # for reproducibility since I use df.sample() from numpy
 
-    CACHED_ACTIVATIONS = "resnet_face.safetensors"
+    CACHED_ACTIVATIONS = "./face_data/task_face_resnet34_acts.safetensors"
     activations = None
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     VIS = False
@@ -622,7 +622,7 @@ if __name__ == "__main__":
     # DEFINE HOW THE MODEL COMPUTES ACTIVATIONS
     @torch.no_grad()
     def resnet_forward(image_paths):
-        images = [Image.open(f"./data/{p}").convert("RGB") for p in image_paths]
+        images = [Image.open(f"./face_data/{p}").convert("RGB") for p in image_paths]
         inputs = processor(images, return_tensors="pt").to(DEVICE)
         outputs = model(**inputs)
         return outputs.logits
@@ -631,7 +631,7 @@ if __name__ == "__main__":
         layer for stage in model.resnet.encoder.stages for layer in stage.layers
     ]
 
-    task, valid = load_task("./data/task_face_localizer.parquet")
+    task, valid = load_task("./face_data/task_face_localizer.parquet")
     valid = valid.sample(32 * 1)
     print("*Loaded Face Localizer Task")
 
