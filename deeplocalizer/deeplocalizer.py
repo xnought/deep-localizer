@@ -499,6 +499,106 @@ def load_task(filename: str):
     return task, validation
 
 
+class DeepLocalizer:
+    def __init__(
+        self,
+        task: pd.DataFrame,
+        layers_activations: list[torch.nn.Module],
+        model_forward: ModelForwardFunc,
+        save_activations_func: SaveActivationsFunc = default_save_activations,
+        ablate_activations_func: AblateActivationsFunc = default_flat_idxs_ablate,
+        ablate_factor: float = 0.0,
+        batch_size=32,
+    ):
+        self.layers_activations = layers_activations
+        self.task = task
+        self.model_forward = model_forward
+        self.save_activations_func = save_activations_func
+        self.ablate_activations_func = ablate_activations_func
+        self.ablate_factor = ablate_factor
+        self.batch_size = batch_size
+        self.activations = None
+
+    def load_activations(self, filename, device="cpu"):
+        self.activations = load_activations_from_disk(filename, device)
+        print(f"[DeepLocalizer] Loaded Activations from '{filename}'")
+        return self
+
+    def compute_activations(self):
+        print("[DeepLocalizer] Computing Activations")
+        self.activations = compute_task_activations(
+            df=task,
+            model_forward=self.model_forward,
+            layers_activations=self.layers_activations,
+            batch_size=self.batch_size,
+        )
+        return self
+
+    def assert_activations(self):
+        assert self.activations, (
+            "Must compute_activations() or load_activations(filename) first"
+        )
+
+    def save_activations(self, filename):
+        self.assert_activations()
+        save_activations_to_disk(self.activations, filename)
+        print(f"[DeepLocalizer] Saved activations to '{filename}'")
+
+    @torch.no_grad()
+    def regular_model_forward(self, df: pd.DataFrame = None):
+        self.assert_activations()
+
+        if df is None:
+            df = self.task
+
+        positive = df[df["positive"] == True]
+        control = df[df["positive"] == False]
+
+        print("[DeepLocalizer] Computing Model Forward")
+        return regular_inference(
+            positive["data"],
+            self.model_forward,
+            self.batch_size,
+        ), regular_inference(
+            control["data"],
+            self.model_forward,
+            self.batch_size,
+        )
+
+    def top_percent_activations(self, top_percent: float, transform=lambda x: x.abs()):
+        self.assert_activations()
+
+        top_idxs, top_values = top_percent_global(
+            _map(transform, self.activations), top_percent
+        )
+        return top_idxs, top_values
+
+    @torch.no_grad()
+    def ablate_model_forward(
+        self,
+        ablate_activations: list[AblateIdxs],
+        df: pd.DataFrame = None,
+    ):
+        self.assert_activations()
+
+        if df is None:
+            df = self.task
+
+        print("[DeepLocalizer] Computing Model Forward ABLATED")
+
+        with AblateTorchModel(
+            layers=self.layers_activations,
+            to_ablate=ablate_activations,
+            scalar=self.ablate_factor,
+            ablate_activations=self.ablate_activations_func,
+        ):
+            return self.regular_model_forward(df)
+
+
+def percent_label_stayed_same(before_preds, after_preds):
+    return (100 * (before_preds == after_preds).sum() / len(before_preds)).item()
+
+
 if __name__ == "__main__":
     from PIL import Image
     import numpy as np
@@ -517,11 +617,6 @@ if __name__ == "__main__":
     model = model.to(DEVICE)
     print("*Loaded Resnet34 from Huggingface")
 
-    task, valid = load_task("./data/task_face_localizer.parquet")
-    task = task.sample(100)
-    valid = valid.sample(100)
-    print("*Loaded Face Localizer Task (Sampling 100 points)")
-
     # DEFINE HOW THE MODEL COMPUTES ACTIVATIONS
     @torch.no_grad()
     def resnet_forward(image_paths):
@@ -534,50 +629,63 @@ if __name__ == "__main__":
         layer for stage in model.resnet.encoder.stages for layer in stage.layers
     ]
 
-    if not os.path.exists(CACHED_ACTIVATIONS):
-        activations = compute_task_activations(
-            df=task,
-            model_forward=resnet_forward,
-            layers_activations=resnet_blocks,
-            batch_size=32,
-        )
-        print("*Computed Activations")
+    task, valid = load_task("./data/task_face_localizer.parquet")
+    valid = valid.sample(32 * 1)
+    print("*Loaded Face Localizer Task")
 
-        save_activations_to_disk(activations, CACHED_ACTIVATIONS)
-        print("*Saved Activations to Disk")
+    d = DeepLocalizer(
+        task=task,
+        layers_activations=resnet_blocks,
+        model_forward=resnet_forward,
+    )
+    if os.path.exists(CACHED_ACTIVATIONS):
+        d.load_activations(CACHED_ACTIVATIONS, DEVICE)
     else:
-        activations = load_activations_from_disk(CACHED_ACTIVATIONS, DEVICE)
-        print(f"*Loaded Activations from {CACHED_ACTIVATIONS}")
+        d.compute_activations()
+        d.save_activations(CACHED_ACTIVATIONS)
 
-    top_percent = 0.5
-    top_idxs, top_values = top_percent_global(activations, top_percent)
-    print(f"*Computed top {top_percent} percent activations to ablate")
+    # top_indices, top_values = d.top_percent_activations(0.3, lambda x: x.abs())
+    # a = [a.abs() for a in d.activations]
+    # visualize_top_per_layer(top_indices, a)
+    # visualize_activations(a, (4, 4), cmap="inferno")
+    # visualize_top_activations(top_indices, top_values, a, (4, 4))
 
-    if VIS:
-        visualize_activations(overall_activation(activations), (4, 4), cmap="inferno")
-        visualize_top_activations(top_idxs, top_values, activations, (4, 4))
-        visualize_top_per_layer(top_idxs, activations)
+    ps = [1, 0.5, 0.25, 0.125, 0.0625]
+    perf_task = []
+    perf_control = []
 
-    # See the performance on the validation set, not what we observed to see if it works!
-    (ablated_task, regular_task), (ablated_control, regular_control) = task_ablated(
-        valid, resnet_forward, resnet_blocks, top_idxs
-    )
-    print("*Computed Ablated Model versus Regular")
+    for p in ps:
+        print(p)
+        top_indices, top_values = d.top_percent_activations(p, lambda x: x.abs())
 
-    regular_task_preds = regular_task.argmax(-1)
-    ablated_task_preds = ablated_task.argmax(-1)
-    shared_prediction = (regular_task_preds == ablated_task_preds).sum() / len(
-        regular_task_preds
-    )
-    print(
-        f"How did the predictions for the face images change after ablation? Answer: {((1 - shared_prediction) * 100).item()}%"
-    )
+        regular_task, regular_control = d.regular_model_forward(valid)
+        ablated_task, ablated_control = d.ablate_model_forward(
+            df=valid, ablate_activations=top_indices
+        )
 
-    regular_control_preds = regular_control.argmax(-1)
-    ablated_control_preds = ablated_control.argmax(-1)
-    shared_prediction = (regular_control_preds == ablated_control_preds).sum() / len(
-        regular_control_preds
-    )
-    print(
-        f"How many changed for the control? Answer: {((1 - shared_prediction) * 100).item()}%"
-    )
+        perf_on_faces = percent_label_stayed_same(
+            before_preds=regular_task.argmax(-1), after_preds=ablated_task.argmax(-1)
+        )
+        perf_task.append(perf_on_faces)
+        print(
+            f"[After Ablation] {perf_on_faces:.3f}% predictions stayed the same for face images"
+        )
+
+        perf_on_objects = percent_label_stayed_same(
+            before_preds=regular_control.argmax(-1),
+            after_preds=ablated_control.argmax(-1),
+        )
+        perf_control.append(perf_on_objects)
+
+        print(
+            f"[After Ablation] {perf_on_objects:.3f}% predictions stayed the same for object images"
+        )
+
+    plt.scatter(ps, perf_task, label="[FACES] % labels same")
+    plt.scatter(ps, perf_control, label="[OBJECTS] % labels same")
+    frac = lambda n, d: r"$\frac{" + str(n) + "}" + "{" + str(d) + "}$"
+    plt.xticks(ps, labels=["$1$", frac(1, 2), frac(1, 4), frac(1, 8), frac(1, 16)])
+    plt.xlabel("Top % activations ablated (candidate face networks)")
+    plt.ylabel("% prediction stayed the same after ablation")
+    plt.legend()
+    plt.show()
