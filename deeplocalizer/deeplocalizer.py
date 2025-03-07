@@ -535,7 +535,7 @@ class DeepLocalizer:
     def compute_activations(self):
         print("[DeepLocalizer] Computing Activations")
         self.activations = compute_task_activations(
-            df=task,
+            df=self.task,
             model_forward=self.model_forward,
             layers_activations=self.layers_activations,
             batch_size=self.batch_size,
