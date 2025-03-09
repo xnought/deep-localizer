@@ -3,6 +3,7 @@
 This library takes in a task (like face localization) and computes activations for the data and computes the top percent of activations and can compute the model with those activations ablated.
 
 A task is just a Pandas dataframe with two required columns and one optional:
+
 - `data`: contains the data or path to the data (you define how to fetch data in `model_forward` later on).
 - `positive`: True or False. True when part of positive stimuli (ie faces). False when part of negative control stimuli (ie objects in the face localizer case).
 - Optional `validation`: True or False. False means part of localization training. True means part of unseen validation that can be used later on to test the performance.
