@@ -87,7 +87,7 @@ plugins:
             options:
               docstring_options:
                 ignore_init_summary: true
-              docstring_section_style: list
+              docstring_section_style: table
               filters: ["!^_"]
               heading_level: 3
               inherited_members: false
@@ -101,4 +101,5 @@ plugins:
               show_source: true
               signature_crossrefs: true
               summary: true
+              annotations_path: "source"
           

@@ -501,13 +501,30 @@ def task_ablated(
     return (ablated_task, regular_task), (ablated_control, regular_control)
 
 
-def load_task(filename: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+def assert_is_task(df: pd.DataFrame):
+    assert "data" in df.columns and "positive" in df.columns
+
+
+def load_task(filename: str) -> tuple[pd.DataFrame, pd.DataFrame] | pd.DataFrame:
+    """Loads in the task from a .parquet file (dataframe) with the columns `data` and `positive` and optionally `validation`
+
+    Parameters:
+        filename: where the task is located as a .parquet file. Underlying file must be parquet
+
+    Returns:
+        If no `validation` column, just returns the dataframe. If there is a validation column splits the return into (task, validation).
+    """
     assert os.path.exists(filename), "task file must exist"
 
     df = pd.read_parquet(filename)
-    task = df[df["validation"] == False]
-    validation = df[df["validation"] == True]
-    return task, validation
+    assert_is_task(df)
+
+    if "validation" in df.columns:
+        task = df[df["validation"] == False]
+        validation = df[df["validation"] == True]
+        return task, validation
+    else:
+        return df
 
 
 class DeepLocalizer:
@@ -519,8 +536,20 @@ class DeepLocalizer:
         save_activations_func: SaveActivationsFunc = default_save_activations,
         ablate_activations_func: AblateActivationsFunc = default_flat_idxs_ablate,
         ablate_factor: float = 0.0,
-        batch_size=32,
+        batch_size: int = 32,
     ):
+        """Initializes the DeepLocalizer. Note, to use other functions must use `load_activations` or `compute_activations` first!
+
+        Parameters:
+            task: Pandas Dataframe with columns `data` and `positive` (bool).
+            layers_activations: list of torch modules/layers that we take activations from the outputs of.
+            model_forward: callback that given a list of data, runs model inference. Can return single output or tuple of outputs from here.
+            save_activations_func: defines how to save activations from each of the layer_activations. By default just saves the entire output.
+            ablate_activations_func: defines how to ablate the activations from each of the layer_activations. By default ablates based on the flattened index.
+            ablate_factor: what to multiply the values to be ablated. Defaults to 0 (full ablation).
+            batch_size: Defines how many inputs passed into model_forward at a time.
+        """
+        assert_is_task(task)
         self.layers_activations = layers_activations
         self.task = task
         self.model_forward = model_forward
@@ -533,10 +562,17 @@ class DeepLocalizer:
     def load_activations(
         self, filename: str, device: torch.device = "cpu"
     ) -> DeepLocalizer:
+        """Loads activations into the DeepLocalizer from a file/disk. Must populate activations to use other core functions.
+
+        Parameters:
+            filename: the filename of a .safetensors file where each dict key is an integer formatted a string
+            device: where to load tensors into. Essentially passes into torch.tensor(..., device)
+        """
         self.activations = load_activations_from_disk(filename, device)
         return self
 
     def compute_activations(self) -> DeepLocalizer:
+        """Computes activations using the given provided `model_forward`. Must populate activations to use other core functions."""
         print("[DeepLocalizer] Computing Activations")
         self.activations = compute_task_activations(
             df=self.task,
@@ -552,6 +588,11 @@ class DeepLocalizer:
         )
 
     def save_activations(self, filename: str):
+        """Save activations from the DeepLocalizer to a file/disk. Can be loaded later on with `load_activations`
+
+        Parameters:
+            filename: the filename to save the activations to disk
+        """
         self.assert_activations()
         save_activations_to_disk(self.activations, filename)
 
@@ -559,9 +600,19 @@ class DeepLocalizer:
     def regular_model_forward(
         self, df: pd.DataFrame = None
     ) -> tuple[ModelForwardReturn, ModelForwardReturn]:
+        """Runs the model on `positive=True` dataframe and `positive=False` instances w/ no ablation (original model).
+
+        Parameters:
+            df: the task data to run model on. Must have columns `data` and `positive` (bool). Defaults to the task provided in the constructor.
+
+        Returns:
+            (Model outputs for `positive=True` rows, Model outputs for `positive=False` rows)
+        """
         self.assert_activations()
 
-        if df is None:
+        if df is not None:
+            assert_is_task(df)
+        else:
             df = self.task
 
         positive = df[df["positive"] == True]
@@ -590,9 +641,20 @@ class DeepLocalizer:
         ablate_activations: list[AblateIdxs],
         df: pd.DataFrame = None,
     ) -> tuple[ModelForwardReturn, ModelForwardReturn]:
+        """Runs the ablated model on `positive=True` dataframe and `positive=False` instances.
+
+        Parameters:
+            ablate_activations: List where each row is a layer and each column is a flat index of the outputs to ablate.
+            df: the task data to run model on. Must have columns `data` and `positive` (bool). Defaults to the task provided in the constructor.
+
+        Returns:
+            (Model outputs for `positive=True` rows, Model outputs for `positive=False` rows)
+        """
         self.assert_activations()
 
-        if df is None:
+        if df is not None:
+            assert_is_task(df)
+        else:
             df = self.task
 
         print("[DeepLocalizer] Computing Model Forward ABLATED")

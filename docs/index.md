@@ -36,7 +36,7 @@ An example using all of the core and visualization functions, see the face local
                   "top_percent_activations",
                   "regular_model_forward",
                   "ablate_model_forward"]
-        show_source: true
+        show_source: false
 
 ### Visualization
 
