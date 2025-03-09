@@ -573,26 +573,108 @@
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">load_task</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">load_task</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><span title="pandas">pd</span></span><span class="o">.</span><span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n"><span title="pandas">pd</span></span><span class="o">.</span><span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">]</span> <span class="o">|</span> <span class="n"><span title="pandas">pd</span></span><span class="o">.</span><span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents first">
 
+        <p>Loads in the task from a .parquet file (dataframe) with the columns <code class="language-python highlight"><span class="n">data</span></code> and <code class="language-python highlight"><span class="n">positive</span></code> and optionally <code class="language-python highlight"><span class="n">validation</span></code></p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>filename</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>where the task is located as a .parquet file. Underlying file must be parquet</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<span title="pandas">pd</span>.<span title="pandas.DataFrame">DataFrame</span>, <span title="pandas">pd</span>.<span title="pandas.DataFrame">DataFrame</span>] | <span title="pandas">pd</span>.<span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If no <code class="language-python highlight"><span class="n">validation</span></code> column, just returns the dataframe. If there is a validation column splits the return into (task, validation).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
             <details class="quote">
               <summary>Source code in <code>deeplocalizer/deeplocalizer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">504</span>
-<span class="normal">505</span>
-<span class="normal">506</span>
-<span class="normal">507</span>
-<span class="normal">508</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">508</span>
 <span class="normal">509</span>
-<span class="normal">510</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_task</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_task</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads in the task from a .parquet file (dataframe) with the columns `data` and `positive` and optionally `validation`</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        filename: where the task is located as a .parquet file. Underlying file must be parquet</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        If no `validation` column, just returns the dataframe. If there is a validation column splits the return into (task, validation).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="s2">&quot;task file must exist&quot;</span>
 
     <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_parquet</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-    <span class="n">task</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;validation&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span>
-    <span class="n">validation</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;validation&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">task</span><span class="p">,</span> <span class="n">validation</span>
+    <span class="n">assert_is_task</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;validation&quot;</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">task</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;validation&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span>
+        <span class="n">validation</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;validation&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">task</span><span class="p">,</span> <span class="n">validation</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">df</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -608,7 +690,7 @@
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">DeepLocalizer</span><span class="p">(</span><span class="n">task</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">layers_activations</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><span title="torch.nn.Module">Module</span></span><span class="p">],</span> <span class="n">model_forward</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.ModelForwardFunc&lt;/code&gt;" href="#deeplocalizer.ModelForwardFunc">ModelForwardFunc</a></span><span class="p">,</span> <span class="n">save_activations_func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.SaveActivationsFunc&lt;/code&gt;" href="#deeplocalizer.SaveActivationsFunc">SaveActivationsFunc</a></span> <span class="o">=</span> <span class="n"><span title="deeplocalizer.default_save_activations">default_save_activations</span></span><span class="p">,</span> <span class="n">ablate_activations_func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.AblateActivationsFunc&lt;/code&gt;" href="#deeplocalizer.AblateActivationsFunc">AblateActivationsFunc</a></span> <span class="o">=</span> <span class="n"><span title="deeplocalizer.default_flat_idxs_ablate">default_flat_idxs_ablate</span></span><span class="p">,</span> <span class="n">ablate_factor</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">DeepLocalizer</span><span class="p">(</span><span class="n">task</span><span class="p">:</span> <span class="n"><span title="pandas">pd</span></span><span class="o">.</span><span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span> <span class="n">layers_activations</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><span title="torch">torch</span></span><span class="o">.</span><span class="n"><span title="torch.nn">nn</span></span><span class="o">.</span><span class="n"><span title="torch.nn.Module">Module</span></span><span class="p">],</span> <span class="n">model_forward</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.ModelForwardFunc&lt;/code&gt;" href="#deeplocalizer.ModelForwardFunc">ModelForwardFunc</a></span><span class="p">,</span> <span class="n">save_activations_func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.SaveActivationsFunc&lt;/code&gt;" href="#deeplocalizer.SaveActivationsFunc">SaveActivationsFunc</a></span> <span class="o">=</span> <span class="n"><span title="deeplocalizer.default_save_activations">default_save_activations</span></span><span class="p">,</span> <span class="n">ablate_activations_func</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.AblateActivationsFunc&lt;/code&gt;" href="#deeplocalizer.AblateActivationsFunc">AblateActivationsFunc</a></span> <span class="o">=</span> <span class="n"><span title="deeplocalizer.default_flat_idxs_ablate">default_flat_idxs_ablate</span></span><span class="p">,</span> <span class="n">ablate_factor</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span> <span class="o">=</span> <span class="mi">32</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents first">
@@ -616,6 +698,131 @@
 
 
 
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>task</code>
+            </td>
+            <td>
+                  <code><span title="pandas">pd</span>.<span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Pandas Dataframe with columns <code class="language-python highlight"><span class="n">data</span></code> and <code class="language-python highlight"><span class="n">positive</span></code> (bool).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>layers_activations</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<span title="torch">torch</span>.<span title="torch.nn">nn</span>.<span title="torch.nn.Module">Module</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>list of torch modules/layers that we take activations from the outputs of.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>model_forward</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.ModelForwardFunc&lt;/code&gt;" href="#deeplocalizer.ModelForwardFunc">ModelForwardFunc</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>callback that given a list of data, runs model inference. Can return single output or tuple of outputs from here.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>save_activations_func</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.SaveActivationsFunc&lt;/code&gt;" href="#deeplocalizer.SaveActivationsFunc">SaveActivationsFunc</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>defines how to save activations from each of the layer_activations. By default just saves the entire output.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="deeplocalizer.default_save_activations">default_save_activations</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>ablate_activations_func</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.AblateActivationsFunc&lt;/code&gt;" href="#deeplocalizer.AblateActivationsFunc">AblateActivationsFunc</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>defines how to ablate the activations from each of the layer_activations. By default ablates based on the flattened index.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="deeplocalizer.default_flat_idxs_ablate">default_flat_idxs_ablate</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>ablate_factor</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>what to multiply the values to be ablated. Defaults to 0 (full ablation).</p>
+              </div>
+            </td>
+            <td>
+                  <code>0.0</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>batch_size</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Defines how many inputs passed into model_forward at a time.</p>
+              </div>
+            </td>
+            <td>
+                  <code>32</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
 
 
@@ -623,45 +830,9 @@
 
 
 
-                  <details class="quote">
-                    <summary>Source code in <code>deeplocalizer/deeplocalizer.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">514</span>
-<span class="normal">515</span>
-<span class="normal">516</span>
-<span class="normal">517</span>
-<span class="normal">518</span>
-<span class="normal">519</span>
-<span class="normal">520</span>
-<span class="normal">521</span>
-<span class="normal">522</span>
-<span class="normal">523</span>
-<span class="normal">524</span>
-<span class="normal">525</span>
-<span class="normal">526</span>
-<span class="normal">527</span>
-<span class="normal">528</span>
-<span class="normal">529</span>
-<span class="normal">530</span>
-<span class="normal">531</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-    <span class="bp">self</span><span class="p">,</span>
-    <span class="n">task</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
-    <span class="n">layers_activations</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
-    <span class="n">model_forward</span><span class="p">:</span> <span class="n">ModelForwardFunc</span><span class="p">,</span>
-    <span class="n">save_activations_func</span><span class="p">:</span> <span class="n">SaveActivationsFunc</span> <span class="o">=</span> <span class="n">default_save_activations</span><span class="p">,</span>
-    <span class="n">ablate_activations_func</span><span class="p">:</span> <span class="n">AblateActivationsFunc</span> <span class="o">=</span> <span class="n">default_flat_idxs_ablate</span><span class="p">,</span>
-    <span class="n">ablate_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
-    <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
-<span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">layers_activations</span> <span class="o">=</span> <span class="n">layers_activations</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="n">task</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">model_forward</span> <span class="o">=</span> <span class="n">model_forward</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">save_activations_func</span> <span class="o">=</span> <span class="n">save_activations_func</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">ablate_activations_func</span> <span class="o">=</span> <span class="n">ablate_activations_func</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">ablate_factor</span> <span class="o">=</span> <span class="n">ablate_factor</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">activations</span> <span class="o">=</span> <span class="kc">None</span>
-</code></pre></div></td></tr></table></div>
-                  </details>
+
+
+
 
 
 
@@ -688,27 +859,8 @@
 
     <div class="doc doc-contents ">
 
-            <details class="quote">
-              <summary>Source code in <code>deeplocalizer/deeplocalizer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">539</span>
-<span class="normal">540</span>
-<span class="normal">541</span>
-<span class="normal">542</span>
-<span class="normal">543</span>
-<span class="normal">544</span>
-<span class="normal">545</span>
-<span class="normal">546</span>
-<span class="normal">547</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">compute_activations</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeepLocalizer</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[DeepLocalizer] Computing Activations&quot;</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">activations</span> <span class="o">=</span> <span class="n">compute_task_activations</span><span class="p">(</span>
-        <span class="n">df</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">,</span>
-        <span class="n">model_forward</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_forward</span><span class="p">,</span>
-        <span class="n">layers_activations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">layers_activations</span><span class="p">,</span>
-        <span class="n">batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="k">return</span> <span class="bp">self</span>
-</code></pre></div></td></tr></table></div>
-            </details>
+        <p>Computes activations using the given provided <code class="language-python highlight"><span class="n">model_forward</span></code>. Must populate activations to use other core functions.</p>
+
     </div>
 
 </div>
@@ -721,24 +873,60 @@
 
 
 </h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">load_activations</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n"><span title="torch.device">device</span></span> <span class="o">=</span> <span class="s1">&#39;cpu&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.DeepLocalizer&lt;/code&gt;" href="#deeplocalizer.DeepLocalizer">DeepLocalizer</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">load_activations</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n"><span title="torch">torch</span></span><span class="o">.</span><span class="n"><span title="torch.device">device</span></span> <span class="o">=</span> <span class="s1">&#39;cpu&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.DeepLocalizer&lt;/code&gt;" href="#deeplocalizer.DeepLocalizer">DeepLocalizer</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-            <details class="quote">
-              <summary>Source code in <code>deeplocalizer/deeplocalizer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">533</span>
-<span class="normal">534</span>
-<span class="normal">535</span>
-<span class="normal">536</span>
-<span class="normal">537</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_activations</span><span class="p">(</span>
-    <span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeepLocalizer</span><span class="p">:</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">activations</span> <span class="o">=</span> <span class="n">load_activations_from_disk</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
-    <span class="k">return</span> <span class="bp">self</span>
-</code></pre></div></td></tr></table></div>
-            </details>
+        <p>Loads activations into the DeepLocalizer from a file/disk. Must populate activations to use other core functions.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>filename</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the filename of a .safetensors file where each dict key is an integer formatted a string</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>device</code>
+            </td>
+            <td>
+                  <code><span title="torch">torch</span>.<span title="torch.device">device</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>where to load tensors into. Essentially passes into torch.tensor(..., device)</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;cpu&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
     </div>
 
 </div>
@@ -756,15 +944,39 @@
 
     <div class="doc doc-contents ">
 
-            <details class="quote">
-              <summary>Source code in <code>deeplocalizer/deeplocalizer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">554</span>
-<span class="normal">555</span>
-<span class="normal">556</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">save_activations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">assert_activations</span><span class="p">()</span>
-    <span class="n">save_activations_to_disk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">activations</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-            </details>
+        <p>Save activations from the DeepLocalizer to a file/disk. Can be loaded later on with <code class="language-python highlight"><span class="n">load_activations</span></code></p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>filename</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the filename to save the activations to disk</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
     </div>
 
 </div>
@@ -777,24 +989,11 @@
 
 
 </h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">top_percent_activations</span><span class="p">(</span><span class="n">top_percent</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n"><span title="torch.abs">abs</span></span><span class="p">(</span><span class="n"><span title="x">x</span></span><span class="p">))</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">]]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">top_percent_activations</span><span class="p">(</span><span class="n">top_percent</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n"><span title="torch">torch</span></span><span class="o">.</span><span class="n"><span title="torch.abs">abs</span></span><span class="p">(</span><span class="n"><span title="x">x</span></span><span class="p">))</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-            <details class="quote">
-              <summary>Source code in <code>deeplocalizer/deeplocalizer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">581</span>
-<span class="normal">582</span>
-<span class="normal">583</span>
-<span class="normal">584</span>
-<span class="normal">585</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">top_percent_activations</span><span class="p">(</span>
-    <span class="bp">self</span><span class="p">,</span> <span class="n">top_percent</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">assert_activations</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">top_percent_global</span><span class="p">(</span><span class="n">_map</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">activations</span><span class="p">),</span> <span class="n">top_percent</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-            </details>
     </div>
 
 </div>
@@ -807,58 +1006,67 @@
 
 
 </h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">regular_model_forward</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.ModelForwardReturn&lt;/code&gt;" href="#deeplocalizer.ModelForwardReturn">ModelForwardReturn</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.ModelForwardReturn&lt;/code&gt;" href="#deeplocalizer.ModelForwardReturn">ModelForwardReturn</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">regular_model_forward</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n"><span title="pandas">pd</span></span><span class="o">.</span><span class="n"><span title="pandas.DataFrame">DataFrame</span></span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.ModelForwardReturn&lt;/code&gt;" href="#deeplocalizer.ModelForwardReturn">ModelForwardReturn</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.ModelForwardReturn&lt;/code&gt;" href="#deeplocalizer.ModelForwardReturn">ModelForwardReturn</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-            <details class="quote">
-              <summary>Source code in <code>deeplocalizer/deeplocalizer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">558</span>
-<span class="normal">559</span>
-<span class="normal">560</span>
-<span class="normal">561</span>
-<span class="normal">562</span>
-<span class="normal">563</span>
-<span class="normal">564</span>
-<span class="normal">565</span>
-<span class="normal">566</span>
-<span class="normal">567</span>
-<span class="normal">568</span>
-<span class="normal">569</span>
-<span class="normal">570</span>
-<span class="normal">571</span>
-<span class="normal">572</span>
-<span class="normal">573</span>
-<span class="normal">574</span>
-<span class="normal">575</span>
-<span class="normal">576</span>
-<span class="normal">577</span>
-<span class="normal">578</span>
-<span class="normal">579</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">regular_model_forward</span><span class="p">(</span>
-    <span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ModelForwardReturn</span><span class="p">,</span> <span class="n">ModelForwardReturn</span><span class="p">]:</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">assert_activations</span><span class="p">()</span>
+        <p>Runs the model on <code class="language-python highlight"><span class="n">positive</span><span class="o">=</span><span class="kc">True</span></code> dataframe and <code class="language-python highlight"><span class="n">positive</span><span class="o">=</span><span class="kc">False</span></code> instances w/ no ablation (original model).</p>
 
-    <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span>
 
-    <span class="n">positive</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;positive&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">True</span><span class="p">]</span>
-    <span class="n">control</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;positive&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>df</code>
+            </td>
+            <td>
+                  <code><span title="pandas">pd</span>.<span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the task data to run model on. Must have columns <code class="language-python highlight"><span class="n">data</span></code> and <code class="language-python highlight"><span class="n">positive</span></code> (bool). Defaults to the task provided in the constructor.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[DeepLocalizer] Computing Model Forward&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">regular_inference</span><span class="p">(</span>
-        <span class="n">positive</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">],</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model_forward</span><span class="p">,</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
-    <span class="p">),</span> <span class="n">regular_inference</span><span class="p">(</span>
-        <span class="n">control</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">],</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">model_forward</span><span class="p">,</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-            </details>
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.ModelForwardReturn&lt;/code&gt;" href="#deeplocalizer.ModelForwardReturn">ModelForwardReturn</a>, <a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.ModelForwardReturn&lt;/code&gt;" href="#deeplocalizer.ModelForwardReturn">ModelForwardReturn</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>(Model outputs for <code class="language-python highlight"><span class="n">positive</span><span class="o">=</span><span class="kc">True</span></code> rows, Model outputs for <code class="language-python highlight"><span class="n">positive</span><span class="o">=</span><span class="kc">False</span></code> rows)</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
     </div>
 
 </div>
@@ -871,52 +1079,83 @@
 
 
 </h4>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">ablate_model_forward</span><span class="p">(</span><span class="n">ablate_activations</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.AblateIdxs&lt;/code&gt;" href="#deeplocalizer.AblateIdxs">AblateIdxs</a></span><span class="p">],</span> <span class="n">df</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.ModelForwardReturn&lt;/code&gt;" href="#deeplocalizer.ModelForwardReturn">ModelForwardReturn</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.ModelForwardReturn&lt;/code&gt;" href="#deeplocalizer.ModelForwardReturn">ModelForwardReturn</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">ablate_model_forward</span><span class="p">(</span><span class="n">ablate_activations</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.AblateIdxs&lt;/code&gt;" href="#deeplocalizer.AblateIdxs">AblateIdxs</a></span><span class="p">],</span> <span class="n">df</span><span class="p">:</span> <span class="n"><span title="pandas">pd</span></span><span class="o">.</span><span class="n"><span title="pandas.DataFrame">DataFrame</span></span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.ModelForwardReturn&lt;/code&gt;" href="#deeplocalizer.ModelForwardReturn">ModelForwardReturn</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.ModelForwardReturn&lt;/code&gt;" href="#deeplocalizer.ModelForwardReturn">ModelForwardReturn</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-            <details class="quote">
-              <summary>Source code in <code>deeplocalizer/deeplocalizer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">587</span>
-<span class="normal">588</span>
-<span class="normal">589</span>
-<span class="normal">590</span>
-<span class="normal">591</span>
-<span class="normal">592</span>
-<span class="normal">593</span>
-<span class="normal">594</span>
-<span class="normal">595</span>
-<span class="normal">596</span>
-<span class="normal">597</span>
-<span class="normal">598</span>
-<span class="normal">599</span>
-<span class="normal">600</span>
-<span class="normal">601</span>
-<span class="normal">602</span>
-<span class="normal">603</span>
-<span class="normal">604</span>
-<span class="normal">605</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">ablate_model_forward</span><span class="p">(</span>
-    <span class="bp">self</span><span class="p">,</span>
-    <span class="n">ablate_activations</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">AblateIdxs</span><span class="p">],</span>
-    <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ModelForwardReturn</span><span class="p">,</span> <span class="n">ModelForwardReturn</span><span class="p">]:</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">assert_activations</span><span class="p">()</span>
+        <p>Runs the ablated model on <code class="language-python highlight"><span class="n">positive</span><span class="o">=</span><span class="kc">True</span></code> dataframe and <code class="language-python highlight"><span class="n">positive</span><span class="o">=</span><span class="kc">False</span></code> instances.</p>
 
-    <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;[DeepLocalizer] Computing Model Forward ABLATED&quot;</span><span class="p">)</span>
-    <span class="k">with</span> <span class="n">AblateTorchModel</span><span class="p">(</span>
-        <span class="n">layers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">layers_activations</span><span class="p">,</span>
-        <span class="n">to_ablate</span><span class="o">=</span><span class="n">ablate_activations</span><span class="p">,</span>
-        <span class="n">scalar</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ablate_factor</span><span class="p">,</span>
-        <span class="n">ablate_activations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ablate_activations_func</span><span class="p">,</span>
-    <span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">regular_model_forward</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-            </details>
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>ablate_activations</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a>[<a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.AblateIdxs&lt;/code&gt;" href="#deeplocalizer.AblateIdxs">AblateIdxs</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List where each row is a layer and each column is a flat index of the outputs to ablate.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>df</code>
+            </td>
+            <td>
+                  <code><span title="pandas">pd</span>.<span title="pandas.DataFrame">DataFrame</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the task data to run model on. Must have columns <code class="language-python highlight"><span class="n">data</span></code> and <code class="language-python highlight"><span class="n">positive</span></code> (bool). Defaults to the task provided in the constructor.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#tuple">tuple</a>[<a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.ModelForwardReturn&lt;/code&gt;" href="#deeplocalizer.ModelForwardReturn">ModelForwardReturn</a>, <a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.ModelForwardReturn&lt;/code&gt;" href="#deeplocalizer.ModelForwardReturn">ModelForwardReturn</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>(Model outputs for <code class="language-python highlight"><span class="n">positive</span><span class="o">=</span><span class="kc">True</span></code> rows, Model outputs for <code class="language-python highlight"><span class="n">positive</span><span class="o">=</span><span class="kc">False</span></code> rows)</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
     </div>
 
 </div>
@@ -938,7 +1177,7 @@
 
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">visualize_activations</span><span class="p">(</span><span class="n">activations</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><span title="torch.Tensor">Tensor</span></span><span class="p">],</span> <span class="n">grid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">visualize_activations</span><span class="p">(</span><span class="n">activations</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><span title="torch">torch</span></span><span class="o">.</span><span class="n"><span title="torch.Tensor">Tensor</span></span><span class="p">],</span> <span class="n">grid</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;viridis&#39;</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents first">
@@ -1170,7 +1409,7 @@
   </span>
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">SaveActivationsFunc</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Callable&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="torch.Tensor">Tensor</span></span><span class="p">],</span> <span class="n"><span title="torch.Tensor">Tensor</span></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">SaveActivationsFunc</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Callable&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="torch">torch</span></span><span class="o">.</span><span class="n"><span title="torch.Tensor">Tensor</span></span><span class="p">],</span> <span class="n"><span title="torch">torch</span></span><span class="o">.</span><span class="n"><span title="torch.Tensor">Tensor</span></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents first">
@@ -1191,7 +1430,7 @@
   </span>
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">AblateActivationsFunc</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Callable&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="torch.Tensor">Tensor</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.AblateIdxs&lt;/code&gt;" href="#deeplocalizer.AblateIdxs">AblateIdxs</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">],</span> <span class="n"><span title="torch.Tensor">Tensor</span></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">AblateActivationsFunc</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;typing.Callable&lt;/code&gt;" href="https://docs.python.org/3/library/typing.html#typing.Callable">Callable</a></span><span class="p">[[</span><span class="n"><span title="torch">torch</span></span><span class="o">.</span><span class="n"><span title="torch.Tensor">Tensor</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" title="&lt;code&gt;deeplocalizer.AblateIdxs&lt;/code&gt;" href="#deeplocalizer.AblateIdxs">AblateIdxs</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">],</span> <span class="n"><span title="torch">torch</span></span><span class="o">.</span><span class="n"><span title="torch.Tensor">Tensor</span></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents first">
@@ -1212,7 +1451,7 @@
   </span>
 
 </h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">AblateIdxs</span> <span class="o">=</span> <span class="n"><span title="torch.Tensor">Tensor</span></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">AblateIdxs</span> <span class="o">=</span> <span class="n"><span title="torch">torch</span></span><span class="o">.</span><span class="n"><span title="torch.Tensor">Tensor</span></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents first">
