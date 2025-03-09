@@ -1,3 +1,4 @@
+from __future__ import annotations
 import torch
 import pandas as pd
 from tqdm import tqdm
@@ -8,7 +9,8 @@ import matplotlib.pyplot as plt
 plt.style.use("dark_background")
 
 SaveActivationsFunc = Callable[[torch.Tensor], torch.Tensor]
-ModelForwardFunc = Callable[[list[Any]], Any]
+ModelForwardReturn = Any | tuple
+ModelForwardFunc = Callable[[list[Any]], ModelForwardReturn]
 AblateIdxs = torch.Tensor | list[int]
 AblateActivationsFunc = Callable[[torch.Tensor, AblateIdxs, float], torch.Tensor]
 
@@ -528,11 +530,13 @@ class DeepLocalizer:
         self.batch_size = batch_size
         self.activations = None
 
-    def load_activations(self, filename, device="cpu"):
+    def load_activations(
+        self, filename: str, device: torch.device = "cpu"
+    ) -> DeepLocalizer:
         self.activations = load_activations_from_disk(filename, device)
         return self
 
-    def compute_activations(self):
+    def compute_activations(self) -> DeepLocalizer:
         print("[DeepLocalizer] Computing Activations")
         self.activations = compute_task_activations(
             df=self.task,
@@ -552,7 +556,9 @@ class DeepLocalizer:
         save_activations_to_disk(self.activations, filename)
 
     @torch.no_grad()
-    def regular_model_forward(self, df: pd.DataFrame = None):
+    def regular_model_forward(
+        self, df: pd.DataFrame = None
+    ) -> tuple[ModelForwardReturn, ModelForwardReturn]:
         self.assert_activations()
 
         if df is None:
@@ -574,7 +580,7 @@ class DeepLocalizer:
 
     def top_percent_activations(
         self, top_percent: float, transform=lambda x: torch.abs(x)
-    ):
+    ) -> tuple[list[int], list[int]]:
         self.assert_activations()
         return top_percent_global(_map(transform, self.activations), top_percent)
 
@@ -583,7 +589,7 @@ class DeepLocalizer:
         self,
         ablate_activations: list[AblateIdxs],
         df: pd.DataFrame = None,
-    ):
+    ) -> tuple[ModelForwardReturn, ModelForwardReturn]:
         self.assert_activations()
 
         if df is None:

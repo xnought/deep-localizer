@@ -34,12 +34,15 @@ For a face localization on Resnet see [`resnet34_example.ipynb`](https://github.
                   "load_activations", 
                   "save_activations",
                   "top_percent_activations",
+                  "regular_model_forward",
                   "ablate_model_forward"]
-        show_source: false
+        show_source: true
 
 ### Types
 
 ::: deeplocalizer.ModelForwardFunc  
+
+::: deeplocalizer.ModelForwardReturn  
 
 ::: deeplocalizer.SaveActivationsFunc 
 
