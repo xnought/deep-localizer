@@ -49,8 +49,6 @@ pip install deeplocalizer
 
 See [`resnet34_example.ipynb`](./resnet34_example.ipynb) for doing localization on a torch model with a custom dataset/task. 
 
-TODO: better documentation.
-
 
 ## Development
 

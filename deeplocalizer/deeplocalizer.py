@@ -499,7 +499,7 @@ def task_ablated(
     return (ablated_task, regular_task), (ablated_control, regular_control)
 
 
-def load_task(filename: str):
+def load_task(filename: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     assert os.path.exists(filename), "task file must exist"
 
     df = pd.read_parquet(filename)
@@ -547,7 +547,7 @@ class DeepLocalizer:
             "Must compute_activations() or load_activations(filename) first"
         )
 
-    def save_activations(self, filename):
+    def save_activations(self, filename: str):
         self.assert_activations()
         save_activations_to_disk(self.activations, filename)
 
@@ -572,7 +572,9 @@ class DeepLocalizer:
             self.batch_size,
         )
 
-    def top_percent_activations(self, top_percent: float, transform=lambda x: x.abs()):
+    def top_percent_activations(
+        self, top_percent: float, transform=lambda x: torch.abs(x)
+    ):
         self.assert_activations()
         return top_percent_global(_map(transform, self.activations), top_percent)
 
