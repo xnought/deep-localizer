@@ -550,6 +550,13 @@
 
 
 <h1 id="usage">Usage</h1>
+<p>This library takes in a task (like face localization) and computes activations for the data and computes the top percent of activations and can compute the model with those activations ablated.</p>
+<p>A task is just a Pandas dataframe with two required columns and one optional:
+- <code class="language-python highlight"><span class="n">data</span></code>: contains the data or path to the data (you define how to fetch data in <code class="language-python highlight"><span class="n">model_forward</span></code> later on).
+- <code class="language-python highlight"><span class="n">positive</span></code>: True or False. True when part of positive stimuli (ie faces). False when part of negative control stimuli (ie objects in the face localizer case).
+- Optional <code class="language-python highlight"><span class="n">validation</span></code>: True or False. False means part of localization training. True means part of unseen validation that can be used later on to test the performance.</p>
+<p>See <a href="https://github.com/xnought/deeplocalizer/blob/main/face_data_viewer.ipynb"><code class="language-python highlight"><span class="n">face_data_viewer</span><span class="o">.</span><span class="n">ipynb</span></code></a> to view an example task.</p>
+<p><strong>Next</strong> see how to operate on the task to localize your model below!</p>
 <h2 id="install">Install</h2>
 <div class="language-bash highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>deeplocalizer
 </code></pre></div>
