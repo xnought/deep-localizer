@@ -20,7 +20,7 @@ from deeplocalizer import DeepLocalizer # or import other functions in API below
 
 ## Example
 
-For a face localization on Resnet see [`resnet34_example.ipynb`](https://github.com/xnought/deeplocalizer/blob/main/resnet34_example.ipynb).
+An example using all of the core and visualization functions, see the face localization on Resnet example:  [`resnet34_example.ipynb`](https://github.com/xnought/deeplocalizer/blob/main/resnet34_example.ipynb).
 
 ## API
 
@@ -37,6 +37,14 @@ For a face localization on Resnet see [`resnet34_example.ipynb`](https://github.
                   "regular_model_forward",
                   "ablate_model_forward"]
         show_source: true
+
+### Visualization
+
+::: deeplocalizer.visualize_activations
+
+::: deeplocalizer.visualize_top_per_layer
+
+::: deeplocalizer.visualize_top_activations
 
 ### Types
 

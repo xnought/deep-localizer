@@ -2,7 +2,7 @@
 
 [![PyPI - Version](https://img.shields.io/pypi/v/deeplocalizer.svg)](https://pypi.org/project/deeplocalizer) 
 
-[Blog Post](https://www.donnybertucci.com/project/deeplocalizer#blog)
+[Blog Post](https://www.donnybertucci.com/project/deeplocalizer#blog), [Docs](https://xnought.github.io/deeplocalizer)
 
 
 **Quickly find functional specialization in PyTorch models.**
@@ -47,7 +47,7 @@ pip install deeplocalizer
 
 **API Usage**
 
-See [`resnet34_example.ipynb`](./resnet34_example.ipynb) for doing localization on a torch model with a custom dataset/task. 
+See exact functions at [Docs](https://xnought.github.io/deeplocalizer) and see [`resnet34_example.ipynb`](./resnet34_example.ipynb) for an example of using those functions.
 
 
 ## Development
@@ -66,6 +66,12 @@ uv run deeplocalizer/deeplocalizer.py
 ```
 
 or run an example python notebook within the .env generated.
+
+**Run Docs**
+
+```bash
+uv run mkdocs serve
+```
 
 ## References
 
